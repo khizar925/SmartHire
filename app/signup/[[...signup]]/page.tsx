@@ -20,7 +20,7 @@ export default function SignUpPage() {
 
       {/* Right side - Sign Up Form */}
       <div className="flex items-center justify-center w-full lg:w-1/2 bg-gray-50">
-        <SignUp />
+        <SignUp afterSignUpUrl="/onboarding" />
       </div>
     </div>
   );
