@@ -3,14 +3,19 @@
 import { UserButton, useUser } from '@clerk/nextjs'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
-import { Building, Users, Briefcase, TrendingUp, Plus, Bell, Settings, User, Search, Filter } from 'lucide-react'
+import { Building, Users, TrendingUp, Plus, Bell, Settings, Search, Briefcase, MapPin, Clock, Trash2, Calendar } from 'lucide-react'
+import { JobPostingModal } from '@/components/JobPostingModal'
+import { Job } from '@/types'
 
 export default function RecruiterDashboard() {
   const { user, isLoaded } = useUser()
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [userRole, setUserRole] = useState<string | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [jobs, setJobs] = useState<Job[]>([])
+  const [jobsLoading, setJobsLoading] = useState(false)
+  const [deletingJobId, setDeletingJobId] = useState<string | null>(null)
 
   useEffect(() => {
     async function checkUser(retryCount = 0) {
@@ -78,6 +83,74 @@ export default function RecruiterDashboard() {
     checkUser()
   }, [user, isLoaded, router])
 
+  // Fetch jobs when user role is verified
+  useEffect(() => {
+    if (userRole === 'recruiter') {
+      fetchJobs()
+    }
+  }, [userRole])
+
+  const fetchJobs = async () => {
+    try {
+      setJobsLoading(true)
+      const response = await fetch('/api/jobs/my-jobs')
+      const result = await response.json()
+
+      if (response.ok && result.jobs) {
+        setJobs(result.jobs)
+      } else {
+        console.error('Error fetching jobs:', result.error)
+      }
+    } catch (error) {
+      console.error('Error fetching jobs:', error)
+    } finally {
+      setJobsLoading(false)
+    }
+  }
+
+  const handleDeleteJob = async (jobId: string, jobTitle: string) => {
+    if (!confirm(`Are you sure you want to delete "${jobTitle}"? This action cannot be undone.`)) {
+      return
+    }
+
+    try {
+      setDeletingJobId(jobId)
+      const response = await fetch(`/api/jobs/${jobId}`, {
+        method: 'DELETE',
+      })
+
+      const result = await response.json()
+
+      if (response.ok) {
+        // Refresh jobs list
+        await fetchJobs()
+      } else {
+        alert(result.error || 'Failed to delete job')
+      }
+    } catch (error) {
+      console.error('Error deleting job:', error)
+      alert('Failed to delete job. Please try again.')
+    } finally {
+      setDeletingJobId(null)
+    }
+  }
+
+  const getExpiryStatus = (expiryDate: string | null | undefined) => {
+    if (!expiryDate) return { status: 'active', color: 'green', label: 'Active' }
+    
+    const expiry = new Date(expiryDate)
+    const now = new Date()
+    const daysUntilExpiry = Math.ceil((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+
+    if (daysUntilExpiry < 0) {
+      return { status: 'expired', color: 'red', label: 'Expired' }
+    } else if (daysUntilExpiry <= 7) {
+      return { status: 'expiring', color: 'orange', label: `Expires in ${daysUntilExpiry} day${daysUntilExpiry !== 1 ? 's' : ''}` }
+    } else {
+      return { status: 'active', color: 'green', label: `Expires in ${daysUntilExpiry} days` }
+    }
+  }
+
   if (!isLoaded || loading) {
     return (
       <div className="relative min-h-screen bg-white flex items-center justify-center overflow-hidden">
@@ -133,140 +206,148 @@ export default function RecruiterDashboard() {
               Manage your hiring pipeline with AI-powered insights
             </p>
           </div>
-          <button className="px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all flex items-center gap-2">
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
+          >
             <Plus className="h-5 w-5" />
             Post New Job
           </button>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-blue-100 rounded-lg">
-                <Briefcase className="h-6 w-6 text-blue-600" />
-              </div>
-              <span className="text-2xl font-bold text-slate-900">8</span>
-            </div>
-            <p className="text-slate-600 font-medium">Active Jobs</p>
-            <p className="text-sm text-slate-500 mt-1">3 closing soon</p>
+        {/* My Job Postings */}
+        <div className="mb-8 bg-white rounded-xl p-6 shadow-sm border border-slate-200">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-xl font-bold text-slate-900">My Job Postings</h3>
+            <button
+              onClick={fetchJobs}
+              disabled={jobsLoading}
+              className="text-sm text-primary-600 font-medium hover:text-primary-700 disabled:opacity-50"
+            >
+              {jobsLoading ? 'Refreshing...' : 'Refresh'}
+            </button>
           </div>
 
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-green-100 rounded-lg">
-                <Users className="h-6 w-6 text-green-600" />
-              </div>
-              <span className="text-2xl font-bold text-slate-900">142</span>
+          {jobsLoading ? (
+            <div className="text-center py-12">
+              <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary-600 border-r-transparent mb-4"></div>
+              <p className="text-slate-600">Loading jobs...</p>
             </div>
-            <p className="text-slate-600 font-medium">Total Candidates</p>
-            <p className="text-sm text-slate-500 mt-1">24 new this week</p>
-          </div>
-
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-purple-100 rounded-lg">
-                <TrendingUp className="h-6 w-6 text-purple-600" />
-              </div>
-              <span className="text-2xl font-bold text-slate-900">68%</span>
-            </div>
-            <p className="text-slate-600 font-medium">Fill Rate</p>
-            <p className="text-sm text-slate-500 mt-1">+5% this month</p>
-          </div>
-
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-orange-100 rounded-lg">
-                <Search className="h-6 w-6 text-orange-600" />
-              </div>
-              <span className="text-2xl font-bold text-slate-900">32</span>
-            </div>
-            <p className="text-slate-600 font-medium">Interviews</p>
-            <p className="text-sm text-slate-500 mt-1">8 scheduled today</p>
-          </div>
-        </div>
-
-        {/* Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Recent Candidates */}
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-bold text-slate-900">Recent Candidates</h3>
-              <button className="text-sm text-primary-600 font-medium hover:text-primary-700 flex items-center gap-1">
-                <Filter className="h-4 w-4" />
-                Filter
+          ) : jobs.length === 0 ? (
+            <div className="text-center py-12">
+              <Briefcase className="h-12 w-12 text-slate-400 mx-auto mb-4" />
+              <p className="text-slate-600 text-lg font-medium mb-2">No jobs posted yet</p>
+              <p className="text-slate-500 text-sm mb-4">Get started by posting your first job</p>
+              <button
+                onClick={() => setIsModalOpen(true)}
+                className="px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white font-medium rounded-lg hover:shadow-lg transition-all"
+              >
+                Post Your First Job
               </button>
             </div>
+          ) : (
             <div className="space-y-4">
-              {[
-                { name: 'Sarah Johnson', role: 'Senior Developer', match: 94, status: 'Top Match' },
-                { name: 'Michael Chen', role: 'UI/UX Designer', match: 89, status: 'Interview' },
-                { name: 'Emily Rodriguez', role: 'Product Manager', match: 87, status: 'Reviewing' },
-              ].map((candidate, idx) => (
-                <div key={idx} className="p-4 border border-slate-200 rounded-lg hover:border-green-300 hover:shadow-sm transition-all">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center text-white font-semibold">
-                        {candidate.name.charAt(0)}
-                      </div>
-                      <div>
-                        <h4 className="font-semibold text-slate-900">{candidate.name}</h4>
-                        <p className="text-sm text-slate-600">{candidate.role}</p>
-                      </div>
-                    </div>
-                    <span className="px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded">
-                      {candidate.match}% Match
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-slate-500">{candidate.status}</span>
-                    <button className="text-xs text-primary-600 font-medium hover:text-primary-700">
-                      View Profile →
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+              {jobs.map((job) => {
+                const expiryStatus = getExpiryStatus(job.expiry_date)
+                const statusColors = {
+                  expired: 'bg-red-100 text-red-700 border-red-200',
+                  expiring: 'bg-orange-100 text-orange-700 border-orange-200',
+                  active: 'bg-green-100 text-green-700 border-green-200',
+                }
 
-          {/* Active Job Postings */}
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-bold text-slate-900">Active Job Postings</h3>
-              <button className="text-sm text-primary-600 font-medium hover:text-primary-700">
-                View all
-              </button>
-            </div>
-            <div className="space-y-4">
-              {[
-                { title: 'Senior Full Stack Engineer', applicants: 45, status: 'Active', days: 12 },
-                { title: 'Product Designer', applicants: 28, status: 'Active', days: 8 },
-                { title: 'DevOps Engineer', applicants: 19, status: 'Closing Soon', days: 2 },
-              ].map((job, idx) => (
-                <div key={idx} className="p-4 border border-slate-200 rounded-lg hover:border-green-300 hover:shadow-sm transition-all">
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
-                      <h4 className="font-semibold text-slate-900 mb-1">{job.title}</h4>
-                      <p className="text-sm text-slate-600">{job.applicants} applicants</p>
+                return (
+                  <div
+                    key={job.id}
+                    className="p-6 border border-slate-200 rounded-lg hover:border-green-300 hover:shadow-md transition-all"
+                  >
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex-1">
+                        <div className="flex items-start gap-3 mb-2">
+                          <div className="p-2 bg-gradient-to-br from-green-500 to-green-600 rounded-lg">
+                            <Briefcase className="h-5 w-5 text-white" />
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="text-lg font-semibold text-slate-900 mb-1">
+                              {job.job_title}
+                            </h4>
+                            <p className="text-slate-600 font-medium mb-2">{job.company_name}</p>
+                          </div>
+                        </div>
+
+                        {/* Job Details */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                          <div className="flex items-center gap-2 text-sm text-slate-600">
+                            <MapPin className="h-4 w-4 text-slate-400" />
+                            <span>{job.job_location}</span>
+                            <span className="text-slate-400">•</span>
+                            <span>{job.workplace_type}</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-sm text-slate-600">
+                            <Clock className="h-4 w-4 text-slate-400" />
+                            <span>{job.employment_type}</span>
+                          </div>
+                        </div>
+
+                        {/* Expiry Date */}
+                        {job.expiry_date && (
+                          <div className="flex items-center gap-2 mb-4">
+                            <Calendar className="h-4 w-4 text-slate-400" />
+                            <span className="text-sm text-slate-600">
+                              Expires: {new Date(job.expiry_date).toLocaleDateString()}
+                            </span>
+                            <span
+                              className={`px-2 py-1 text-xs font-medium rounded border ${statusColors[expiryStatus.status as keyof typeof statusColors]}`}
+                            >
+                              {expiryStatus.label}
+                            </span>
+                          </div>
+                        )}
+
+                        {/* Skills */}
+                        {job.skills && job.skills.length > 0 && (
+                          <div className="flex flex-wrap gap-2 mb-4">
+                            {job.skills.slice(0, 5).map((skill, idx) => (
+                              <span
+                                key={idx}
+                                className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium"
+                              >
+                                {skill}
+                              </span>
+                            ))}
+                            {job.skills.length > 5 && (
+                              <span className="px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-xs font-medium">
+                                +{job.skills.length - 5} more
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <span className={`px-2 py-1 text-xs font-medium rounded ${
-                      job.status === 'Active' 
-                        ? 'bg-green-100 text-green-700' 
-                        : 'bg-orange-100 text-orange-700'
-                    }`}>
-                      {job.status}
-                    </span>
+
+                    {/* Actions */}
+                    <div className="flex items-center justify-between pt-4 border-t border-slate-200">
+                      <span className="text-xs text-slate-500">
+                        Posted {new Date(job.created_at).toLocaleDateString()}
+                        {job.status === 'closed' && (
+                          <span className="ml-2 px-2 py-1 bg-slate-100 text-slate-600 rounded text-xs">
+                            Closed
+                          </span>
+                        )}
+                      </span>
+                      <button
+                        onClick={() => handleDeleteJob(job.id, job.job_title)}
+                        disabled={deletingJobId === job.id}
+                        className="px-4 py-2 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        {deletingJobId === job.id ? 'Deleting...' : 'Delete'}
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-slate-500">{job.days} days remaining</span>
-                    <button className="text-xs text-primary-600 font-medium hover:text-primary-700">
-                      Manage →
-                    </button>
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
-          </div>
+          )}
         </div>
 
         {/* Quick Actions */}
@@ -292,6 +373,17 @@ export default function RecruiterDashboard() {
           </div>
         </div>
       </main>
+
+      {/* Job Posting Modal */}
+      <JobPostingModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSuccess={() => {
+          setIsModalOpen(false)
+          // Refresh jobs list after posting
+          fetchJobs()
+        }}
+      />
     </div>
   )
 }
