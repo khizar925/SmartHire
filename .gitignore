@@ -26,3 +26,5 @@ next-env.d.ts
 
 
 .cursorignore
+design.md
+todo.md
