@@ -2,9 +2,9 @@
 
 import Image from 'next/image';
 import { Button } from './Button';
-import Link from 'next/link';
 import { ChevronRight, Sparkles, CheckCircle2 } from 'lucide-react';
 import demoPic from '@/assets/demo-pic.jpg';
+import Link from 'next/link';
 
 export const Hero = () => {
   return (
@@ -38,7 +38,8 @@ export const Hero = () => {
 
         {/* Buttons */}
         <div className="animate-fade-in-up opacity-0 delay-300 flex flex-col sm:flex-row gap-4 justify-center items-center mb-16 w-full sm:w-auto">
-          <Link href="/signup">
+
+          <Link href="/sign-in">
             <Button
               variant="black"
               size="lg"

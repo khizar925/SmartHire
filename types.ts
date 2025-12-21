@@ -60,3 +60,5 @@ export interface JobPostingFormData {
 export interface RecruiterJob extends Job {
   // Same as Job, but used for clarity in recruiter context
 }
+
+export type UserRole = "candidate" | "recruiter";

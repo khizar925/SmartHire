@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { Menu, X, BrainCircuit } from 'lucide-react';
-import Link from 'next/link';
 import { Button } from './Button';
+import Link from 'next/link';
 
 export const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -48,12 +48,14 @@ export const Navbar = () => {
                 {link.label}
               </a>
             ))}
-            <Link href="/signup">
-              <Button 
-                variant="black" 
+            <Link
+              href="/sign-in"
+            >
+              <Button
+                variant="black"
                 size="sm"
               >
-                Get Started
+                Login
               </Button>
             </Link>
           </div>
@@ -85,12 +87,12 @@ export const Navbar = () => {
               </a>
             ))}
             <div className="mt-4 px-3">
-              <Link href="/signup" onClick={() => setIsMobileMenuOpen(false)}>
-                <Button 
-                  variant="black" 
+              <Link href="/signin">
+                <Button
+                  variant="black"
                   className="w-full"
                 >
-                  Get Started
+                  Login
                 </Button>
               </Link>
             </div>

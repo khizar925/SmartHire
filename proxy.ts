@@ -1,6 +1,29 @@
-import { clerkMiddleware } from '@clerk/nextjs/server'
+import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
+import { NextResponse } from 'next/server'
 
-export default clerkMiddleware()
+const isProtectedRoute = createRouteMatcher([
+  '/onboarding(.*)',
+  '/dashboard(.*)',
+])
+
+export default clerkMiddleware(async (auth, req) => {
+  // ✅ CORRECT ORDER:
+  // 1. First check: authenticated user on landing → redirect to dashboard
+  // 2. Second check: protected routes → require auth
+  // 3. Third: public routes → allow through
+  
+  const { userId } = await auth();
+  
+  // Auto-redirect authenticated users from landing page
+  if (userId && req.nextUrl.pathname === '/') {
+    return NextResponse.redirect(new URL('/dashboard', req.url));
+  }
+
+  // Existing protected route logic
+  if (isProtectedRoute(req)) {
+    await auth.protect();
+  }
+})
 
 export const config = {
   matcher: [

@@ -1,3 +1,4 @@
+// app/sign-in/[[...sign-in]]/page.tsx
 'use client';
 
 import { SignIn } from "@clerk/nextjs";
@@ -20,7 +21,11 @@ export default function SignInPage() {
 
             {/* Right side - Sign In Form */}
             <div className="flex items-center justify-center w-full lg:w-1/2 bg-gray-50">
-                <SignIn afterSignInUrl="/auth/callback" />
+                <SignIn
+                    afterSignInUrl="/onboarding"
+                    afterSignUpUrl="/onboarding"
+                    redirectUrl="/onboarding"
+                />
             </div>
         </div>
     );

@@ -1,224 +1,188 @@
-'use client'
+'use client';
 
-import { useUser } from '@clerk/nextjs'
-import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
-import { Briefcase, Building, Sparkles, ArrowRight, Loader2 } from 'lucide-react'
+import { useUser } from '@clerk/nextjs';
+import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { Briefcase, Users, Loader2, AlertCircle } from 'lucide-react';
+import { Button } from '@/components/Button';
+import type { UserRole } from '@/types';
 
 export default function OnboardingPage() {
-  const { user, isLoaded } = useUser()
-  const router = useRouter()
+  const { user, isLoaded } = useUser();
+  const router = useRouter();
+  const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // States
-  const [loading, setLoading] = useState(true)
-  const [selecting, setSelecting] = useState(false)
-  const [isRedirecting, setIsRedirecting] = useState(false)
-  const [selectedRole, setSelectedRole] = useState<'candidate' | 'recruiter' | null>(null)
-  const [error, setError] = useState<string | null>(null)
-
+  // Check if user already has a role and redirect to dashboard
   useEffect(() => {
-    // 1. Guard clause: stop if Clerk isn't loaded or user isn't logged in
-    if (!isLoaded || !user) return
-
-    // 2. Stop the check if we are currently in the middle of selecting or redirecting
-    if (selecting || isRedirecting) return
-
-    const userId = user.id;
-
-    async function checkUserExists() {
-      try {
-        const { data, error: sbError } = await supabase
-          .from('users')
-          .select('role')
-          .eq('clerk_id', userId)
-          .maybeSingle() // Use maybeSingle to avoid errors if 0 rows found
-
-        if (sbError) {
-          console.error('Error checking user in Supabase:', sbError)
-          setLoading(false)
-          return
-        }
-
-        if (data?.role) {
-          console.log('User already has role, redirecting to dashboard:', data.role)
-          setIsRedirecting(true)
-          // Use window.location for a hard redirect to avoid cache issues
-          window.location.href = `/dashboard/${data.role}`
-          return
-        }
-
-        // If no role found, stop the loading spinner so they see the cards
-        setLoading(false)
-      } catch (err) {
-        console.error('Error checking user:', err)
-        setLoading(false)
+    if (isLoaded && user) {
+      const existingRole = user.publicMetadata?.role as UserRole | undefined;
+      if (existingRole) {
+        router.push('/dashboard');
       }
     }
+  }, [isLoaded, user, router]);
 
-    checkUserExists()
-  }, [user, isLoaded, selecting, isRedirecting])
+  const handleRoleSelection = async (role: UserRole) => {
+    if (isSaving) return; // Prevent double submissions
 
-  const handleRoleSelection = async (role: 'candidate' | 'recruiter') => {
-    if (!user) {
-      setError('User not found. Please sign in again.')
-      return
-    }
-
-    const email = user.primaryEmailAddress?.emailAddress
-    if (!email) {
-      setError('Email address not found. Please update your profile.')
-      return
-    }
-
-    setSelecting(true)
-    setSelectedRole(role)
-    setError(null)
+    setSelectedRole(role);
+    setError(null);
+    setIsSaving(true);
 
     try {
-      console.log('Onboarding: Sending role selection to API', { email, role })
-      
-      const response = await fetch('/api/users', {
+      const response = await fetch('/api/user/role', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          email,
-          role,
-        }),
-      })
+        body: JSON.stringify({ role }),
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (!response.ok) {
-        console.error('Onboarding: API error', data)
-        throw new Error(data.error || data.details || 'Failed to save user data')
+        // Handle different error status codes
+        if (response.status === 409) {
+          setError('Your role has already been set and cannot be changed.');
+        } else if (response.status === 400) {
+          setError(data.error || 'Invalid role selected.');
+        } else if (response.status === 401) {
+          setError('Please sign in to continue.');
+          router.push('/sign-in');
+          return;
+        } else {
+          setError(data.error || 'An error occurred. Please try again.');
+        }
+        setIsSaving(false);
+        return;
       }
 
-      console.log('Onboarding: User saved successfully, redirecting to dashboard', { role })
+      // Success: Update client state and refresh router
+      // Small delay to ensure Clerk session updates
+      await new Promise(resolve => setTimeout(resolve, 500));
       
-      // Final Step: Lock the UI and redirect
-      setIsRedirecting(true)
-
-      /**
-       * IMPORTANT: Using window.location.href instead of router.replace
-       * helps break the Next.js App Router cache and ensures the Dashboard 
-       * sees the fresh Supabase data.
-       */
-      // Small delay to ensure state is updated and UI shows loading
-      setTimeout(() => {
-        window.location.href = `/dashboard/${role}`
-      }, 100)
-
+      // Force router refresh to update server components
+      router.refresh();
+      
+      // Redirect to dashboard
+      router.push('/dashboard');
     } catch (err) {
-      console.error('Onboarding: Error in handleRoleSelection', err)
-      setError(err instanceof Error ? err.message : 'An error occurred')
-      setSelecting(false)
-      setSelectedRole(null)
-      setIsRedirecting(false)
+      console.error('Error saving role:', err);
+      setError('Network error. Please check your connection and try again.');
+      setIsSaving(false);
     }
+  };
+
+  // Show loading state while checking user
+  if (!isLoaded) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <Loader2 className="h-8 w-8 animate-spin text-primary-600" />
+      </div>
+    );
   }
 
-  // Loading Screen (Initial check or Redirecting state)
-  if (!isLoaded || loading || isRedirecting) {
-    return (
-      <div className="relative min-h-screen bg-white flex items-center justify-center">
-        <div className="text-center z-10">
-          <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto mb-4" />
-          <p className="text-slate-600 text-lg font-medium">
-            {isRedirecting ? 'Preparing your dashboard...' : 'Loading profile...'}
-          </p>
-        </div>
-      </div>
-    )
+  // If user is not authenticated, redirect to sign-in
+  if (!user) {
+    router.push('/sign-in');
+    return null;
   }
 
   return (
-    <div className="relative min-h-screen bg-white flex items-center justify-center px-4 py-12 overflow-hidden">
-      {/* Background decoration */}
-      <div className="absolute top-0 inset-x-0 h-screen pointer-events-none -z-10 overflow-hidden">
-        <div className="absolute top-[20%] left-[10%] w-96 h-96 bg-blue-100 rounded-full blur-[100px] opacity-40 animate-pulse"></div>
-        <div className="absolute top-[30%] right-[10%] w-[500px] h-[500px] bg-slate-50 rounded-full blur-[120px] opacity-60"></div>
-      </div>
-
-      <div className="w-full max-w-4xl z-10">
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-slate-200 bg-white/80 backdrop-blur-sm text-slate-600 text-xs font-semibold uppercase tracking-wide mb-6 shadow-sm">
-            <Sparkles className="h-3.5 w-3.5 text-blue-500 fill-blue-100" />
-            <span>Get Started</span>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-12">
+      <div className="max-w-2xl w-full">
+        <div className="bg-white rounded-2xl shadow-xl p-8 md:p-12">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <h1 className="text-3xl md:text-4xl font-bold font-serif text-slate-900 mb-3">
+              Welcome to Smart Hire
+            </h1>
+            <p className="text-lg text-slate-600">
+              Please select your role to get started
+            </p>
           </div>
 
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-slate-900 tracking-tight mb-4 leading-tight">
-            Welcome to{' '}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-400 italic">
-              Smart Hire
-            </span>
-          </h1>
+          {/* Error Message */}
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-red-800">{error}</p>
+            </div>
+          )}
 
-          <p className="text-xl text-slate-500 max-w-2xl mx-auto leading-relaxed font-medium">
-            Choose your role to begin your journey with AI-powered recruitment
-          </p>
-        </div>
+          {/* Role Selection */}
+          <div className="grid md:grid-cols-2 gap-4 mb-6">
+            {/* Candidate Option */}
+            <button
+              onClick={() => handleRoleSelection('candidate')}
+              disabled={isSaving}
+              className={`p-6 rounded-xl border-2 transition-all duration-200 text-left ${
+                selectedRole === 'candidate'
+                  ? 'border-primary-600 bg-primary-50 shadow-lg'
+                  : 'border-slate-200 hover:border-primary-300 hover:bg-slate-50'
+              } ${isSaving ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+            >
+              <div className="flex items-start gap-4">
+                <div className={`p-3 rounded-lg ${
+                  selectedRole === 'candidate' ? 'bg-primary-100' : 'bg-slate-100'
+                }`}>
+                  <Users className={`h-6 w-6 ${
+                    selectedRole === 'candidate' ? 'text-primary-600' : 'text-slate-600'
+                  }`} />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-xl font-bold text-slate-900 mb-2">
+                    I'm a Candidate
+                  </h3>
+                  <p className="text-sm text-slate-600">
+                    Looking for job opportunities and want to track my applications
+                  </p>
+                </div>
+              </div>
+            </button>
 
-        {error && (
-          <div className="mb-6 max-w-2xl mx-auto p-4 bg-red-50 border border-red-200 rounded-xl">
-            <p className="text-red-800 text-sm font-medium text-center">{error}</p>
+            {/* Recruiter Option */}
+            <button
+              onClick={() => handleRoleSelection('recruiter')}
+              disabled={isSaving}
+              className={`p-6 rounded-xl border-2 transition-all duration-200 text-left ${
+                selectedRole === 'recruiter'
+                  ? 'border-primary-600 bg-primary-50 shadow-lg'
+                  : 'border-slate-200 hover:border-primary-300 hover:bg-slate-50'
+              } ${isSaving ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+            >
+              <div className="flex items-start gap-4">
+                <div className={`p-3 rounded-lg ${
+                  selectedRole === 'recruiter' ? 'bg-primary-100' : 'bg-slate-100'
+                }`}>
+                  <Briefcase className={`h-6 w-6 ${
+                    selectedRole === 'recruiter' ? 'text-primary-600' : 'text-slate-600'
+                  }`} />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-xl font-bold text-slate-900 mb-2">
+                    I'm a Recruiter
+                  </h3>
+                  <p className="text-sm text-slate-600">
+                    Hiring talent and want to manage job postings and candidates
+                  </p>
+                </div>
+              </div>
+            </button>
           </div>
-        )}
 
-        <div className="grid md:grid-cols-2 gap-6 max-w-2xl mx-auto">
-          {/* Candidate Card */}
-          <button
-            onClick={() => handleRoleSelection('candidate')}
-            disabled={selecting}
-            className={`group relative bg-white rounded-2xl p-8 border-2 transition-all duration-300 shadow-lg hover:shadow-2xl disabled:opacity-50 ${selectedRole === 'candidate' ? 'border-blue-600 scale-[0.98]' : 'border-slate-200 hover:border-blue-300'
-              }`}
-          >
-            <div className="relative z-10 text-center">
-              <div className="mb-6 flex justify-center">
-                <div className="p-4 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg">
-                  <Briefcase className="h-8 w-8 text-white" />
-                </div>
-              </div>
-              <h3 className="text-2xl font-bold text-slate-900 mb-3">I am a Candidate</h3>
-              <p className="text-slate-600 mb-6">Looking for opportunities? Let AI match you with the perfect roles.</p>
-              <div className="flex items-center justify-center gap-2 text-blue-600 font-semibold">
-                {selecting && selectedRole === 'candidate' ? (
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                ) : (
-                  <><span>Get Started</span><ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" /></>
-                )}
-              </div>
+          {/* Loading Indicator */}
+          {isSaving && (
+            <div className="flex items-center justify-center gap-2 text-primary-600">
+              <Loader2 className="h-5 w-5 animate-spin" />
+              <span className="text-sm font-medium">Saving your selection...</span>
             </div>
-          </button>
-
-          {/* Recruiter Card */}
-          <button
-            onClick={() => handleRoleSelection('recruiter')}
-            disabled={selecting}
-            className={`group relative bg-white rounded-2xl p-8 border-2 transition-all duration-300 shadow-lg hover:shadow-2xl disabled:opacity-50 ${selectedRole === 'recruiter' ? 'border-blue-600 scale-[0.98]' : 'border-slate-200 hover:border-blue-300'
-              }`}
-          >
-            <div className="relative z-10 text-center">
-              <div className="mb-6 flex justify-center">
-                <div className="p-4 rounded-2xl bg-gradient-to-br from-indigo-500 to-indigo-600 shadow-lg">
-                  <Building className="h-8 w-8 text-white" />
-                </div>
-              </div>
-              <h3 className="text-2xl font-bold text-slate-900 mb-3">I am a Recruiter</h3>
-              <p className="text-slate-600 mb-6">Hiring talent? Streamline your process with AI-powered screening.</p>
-              <div className="flex items-center justify-center gap-2 text-blue-600 font-semibold">
-                {selecting && selectedRole === 'recruiter' ? (
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                ) : (
-                  <><span>Get Started</span><ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" /></>
-                )}
-              </div>
-            </div>
-          </button>
+          )}
         </div>
       </div>
     </div>
-  )
+  );
 }
+

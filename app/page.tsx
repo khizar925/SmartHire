@@ -8,7 +8,8 @@ import { CTA } from '@/components/CTA';
 import { Footer } from '@/components/Footer';
 import { Pricing } from '@/components/Pricing';
 
-export default function Home() {
+export default async function Home() {
+
   return (
     <div className="min-h-screen bg-white">
       <Navbar />
