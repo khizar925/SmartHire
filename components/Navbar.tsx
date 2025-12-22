@@ -87,7 +87,7 @@ export const Navbar = () => {
               </a>
             ))}
             <div className="mt-4 px-3">
-              <Link href="/signin">
+              <Link href="/sign-in">
                 <Button
                   variant="black"
                   className="w-full"
