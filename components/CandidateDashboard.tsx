@@ -178,7 +178,7 @@ export function CandidateDashboard({ firstName }: { firstName?: string }) {
                 return (
                   <div
                     key={job.id}
-                    className="border border-slate-200 rounded-lg p-6 hover:shadow-md transition-shadow"
+                    className="flex flex-col h-full border border-slate-200 rounded-lg p-6 hover:shadow-md transition-shadow"
                   >
                     {/* Header */}
                     <div className="flex items-start justify-between mb-4">
@@ -225,7 +225,7 @@ export function CandidateDashboard({ firstName }: { firstName?: string }) {
                     {/* Apply Now Button */}
                     <Button
                       variant="primary"
-                      className="w-full"
+                      className="w-full mt-auto"
                       onClick={() => {
                         // TODO: Implement application functionality
                         alert('Application feature coming soon!');

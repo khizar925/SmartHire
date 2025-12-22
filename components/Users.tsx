@@ -4,6 +4,8 @@ import React, { useState } from 'react';
 import Image from 'next/image';
 import { Briefcase, Users } from 'lucide-react';
 import { Button } from './Button';
+import recruiterImage from "../assets/recruiter.png";
+import candidateImage from "../assets/candidate.png";
 
 const users = [
   {
@@ -17,7 +19,7 @@ const users = [
       "Automated interview scheduling",
       "Unified applicant management dashboard"
     ],
-    image: "https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&q=80&w=1600"
+    image: recruiterImage
   },
   {
     id: 'candidates',
@@ -30,7 +32,7 @@ const users = [
       "Unbiased AI evaluation",
       "Smart job recommendations"
     ],
-    image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=1600"
+    image: candidateImage
   }
 ];
 

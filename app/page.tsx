@@ -22,7 +22,7 @@ export default async function Home() {
         <Pricing />
         <CTA />
       </main>
-      <Footer />
+      {/* <Footer /> */}
     </div>
   );
 }

@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { Button } from './Button';
 
 export const CTA = () => {
@@ -10,7 +11,7 @@ export const CTA = () => {
           {/* Decorative Elements */}
           <div className="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 rounded-full bg-primary-900 opacity-50 blur-3xl group-hover:scale-110 transition-transform duration-1000"></div>
           <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-72 h-72 rounded-full bg-primary-600 opacity-20 blur-3xl group-hover:scale-110 transition-transform duration-1000"></div>
-          
+
           <div className="relative z-10">
             <h2 className="text-3xl md:text-5xl font-bold font-serif text-white mb-6 tracking-tight">
               Ready to hire smarter?
@@ -19,16 +20,19 @@ export const CTA = () => {
               Join thousands of companies and candidates using Smart Hire to connect with the right opportunities.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button 
-                size="lg" 
-                className="text-black hover:shadow-xl shadow-white/10 border-0"
-                onClick={(e) => e.preventDefault()}
+              <Link
+                href="/sign-in"
               >
-                Get Started Now
-              </Button>
-              <Button 
-                size="lg" 
-                variant="outline" 
+                <Button
+                  size="lg"
+                  className="text-black hover:shadow-xl shadow-white/10 border-0"
+                >
+                  Get Started Now
+                </Button>
+              </Link>
+              <Button
+                size="lg"
+                variant="outline"
                 className="text-white border-white/20 hover:bg-white/10 hover:border-white"
                 onClick={(e) => e.preventDefault()}
               >
