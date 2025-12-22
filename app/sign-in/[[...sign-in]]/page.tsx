@@ -25,6 +25,11 @@ export default function SignInPage() {
                     afterSignInUrl="/onboarding"
                     afterSignUpUrl="/onboarding"
                     redirectUrl="/onboarding"
+                    appearance={{
+                        elements: {
+                            footer: { display: 'none' }
+                        }
+                    }}
                 />
             </div>
         </div>
