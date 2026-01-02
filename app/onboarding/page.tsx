@@ -13,14 +13,22 @@ export default function OnboardingPage() {
   const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isCheckingRole, setIsCheckingRole] = useState(true);
 
   // Check if user already has a role and redirect to dashboard
   useEffect(() => {
     if (isLoaded && user) {
       const existingRole = user.publicMetadata?.role as UserRole | undefined;
       if (existingRole) {
+        // User has a role, redirect to dashboard (loader will show during redirect)
         router.push('/dashboard');
+      } else {
+        // User doesn't have a role, show onboarding UI
+        setIsCheckingRole(false);
       }
+    } else if (isLoaded && !user) {
+      // User is not authenticated, redirect to sign-in
+      router.push('/sign-in');
     }
   }, [isLoaded, user, router]);
 
@@ -75,8 +83,8 @@ export default function OnboardingPage() {
     }
   };
 
-  // Show loading state while checking user
-  if (!isLoaded) {
+  // Show loading state while checking user or role
+  if (!isLoaded || isCheckingRole) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <Loader2 className="h-8 w-8 animate-spin text-primary-600" />
@@ -88,6 +96,17 @@ export default function OnboardingPage() {
   if (!user) {
     router.push('/sign-in');
     return null;
+  }
+
+  // Only show onboarding UI if user has no role
+  const existingRole = user.publicMetadata?.role as UserRole | undefined;
+  if (existingRole) {
+    // This shouldn't happen due to useEffect, but show loader as fallback
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <Loader2 className="h-8 w-8 animate-spin text-primary-600" />
+      </div>
+    );
   }
 
   return (
