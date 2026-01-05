@@ -18,7 +18,7 @@ Smart Hire is an advanced recruitment management system that leverages AI to str
 1. **Clone the repository:**
    ```bash
    git clone <repository-url>
-   cd Smart-Hire
+   cd SmartHire
    ```
 
 2. **Install dependencies:**
@@ -61,77 +61,4 @@ npm start
 - **Icons:** Lucide React
 - **Animations:** Framer Motion
 - **Image Optimization:** Next.js Image component
-
-## 📁 Project Structure
-
-```
-Smart-Hire/
-├── app/                    # Next.js app directory
-│   ├── layout.tsx         # Root layout with Clerk provider
-│   ├── page.tsx           # Home page
-│   ├── globals.css        # Global styles
-│   ├── signin/            # Sign in page
-│   └── signup/            # Sign up page
-├── components/            # React components
-│   ├── Navbar.tsx         # Navigation bar
-│   ├── Hero.tsx           # Hero section
-│   ├── Features.tsx       # Features section
-│   ├── ProblemSolution.tsx # Problem/Solution section
-│   ├── Users.tsx          # Users section
-│   ├── Stats.tsx          # Statistics section
-│   ├── Pricing.tsx        # Pricing section
-│   ├── CTA.tsx            # Call-to-action section
-│   ├── Footer.tsx         # Footer component
-│   └── Button.tsx         # Reusable button component
-├── types.ts               # TypeScript type definitions
-├── metadata.json          # Project metadata
-└── tailwind.config.ts     # Tailwind CSS configuration
-```
-
-## ✨ Features
-
-- **Modern Landing Page:**
-  - Responsive design for all devices
-  - Smooth animations and transitions
-  - Hero section with call-to-action
-  - Features showcase
-  - Problem/Solution presentation
-  - User testimonials
-  - Pricing plans
-  - Statistics display
-
-- **Authentication:**
-  - User sign-in and sign-up pages
-  - Clerk-powered authentication
-  - Secure session management
-
-- **Performance & SEO:**
-  - Server-side rendering (SSR)
-  - Optimized images with Next.js Image component
-  - SEO-friendly metadata
-  - Fast page loads
-
-- **Developer Experience:**
-  - TypeScript for type safety
-  - Component-based architecture
-  - Tailwind CSS for styling
-  - ESLint for code quality
-
-## 🧪 Available Scripts
-
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm start` - Start production server
-- `npm run lint` - Run ESLint
-
-## 🔐 Environment Variables
-
-Make sure to set up the following environment variables:
-
-- `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` - Clerk publishable key
-- `CLERK_SECRET_KEY` - Clerk secret key
-
-## 📝 License
-
-This project is private and proprietary.
 
