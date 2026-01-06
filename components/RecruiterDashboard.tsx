@@ -15,16 +15,14 @@ export function RecruiterDashboard({ firstName }: { firstName?: string }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+
+  useEffect (() => {
     fetchJobs();
   }, []);
 
-  // Refresh jobs when modal closes (in case a new job was added)
-  useEffect(() => {
-    if (!isModalOpen) {
-      fetchJobs();
-    }
-  }, [isModalOpen]);
+  const handleJobPosted = () => {
+    fetchJobs();
+  };
 
   const fetchJobs = async () => {
     setIsLoading(true);
@@ -135,11 +133,10 @@ export function RecruiterDashboard({ firstName }: { firstName?: string }) {
                       {job.job_title}
                     </h3>
                     <span
-                      className={`px-2.5 py-1 rounded-full text-xs font-semibold flex-shrink-0 ${
-                        job.status === 'active'
+                      className={`px-2.5 py-1 rounded-full text-xs font-semibold flex-shrink-0 ${job.status === 'active'
                           ? 'bg-green-100 text-green-700'
                           : 'bg-slate-100 text-slate-700'
-                      }`}
+                        }`}
                     >
                       {job.status === 'active' ? 'Active' : 'Closed'}
                     </span>
@@ -191,6 +188,7 @@ export function RecruiterDashboard({ firstName }: { firstName?: string }) {
       <PostJobModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
+        onJobposted={handleJobPosted} // Pass the callback
       />
     </>
   );

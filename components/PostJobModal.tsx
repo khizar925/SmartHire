@@ -1,3 +1,4 @@
+// components/PostJobModal.tsx
 'use client';
 
 import { useState } from 'react';
@@ -8,9 +9,10 @@ import { Button } from './Button';
 interface PostJobModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onJobposted: () => void;
 }
 
-export function PostJobModal({ isOpen, onClose }: PostJobModalProps) {
+export function PostJobModal({ isOpen, onClose, onJobposted }: PostJobModalProps) {
   const router = useRouter();
   const [formData, setFormData] = useState({
     jobTitle: '',
@@ -74,8 +76,7 @@ export function PostJobModal({ isOpen, onClose }: PostJobModalProps) {
       });
       setIsLoading(false);
       onClose();
-      // Refresh the dashboard to show the new job
-      router.refresh();
+      onJobposted();
     } catch (err) {
       console.error('Error submitting job:', err);
       setError('Failed to create job');
