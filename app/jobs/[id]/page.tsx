@@ -5,6 +5,9 @@ import { use, useState, useEffect } from 'react';
 import { Loader2, AlertCircle, MapPin, Clock, Briefcase, Upload } from 'lucide-react';
 import { Button } from '@/components/Button';
 
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+
 type Props = {
     params: Promise<{ id: string }>
 }
@@ -392,11 +395,11 @@ export default function JobPage({ params }: Props) {
                 {/* Description Section */}
                 {activeTab === 'overview' && (
                     <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 md:p-8 mb-6">
-                        <h2 className="text-xl font-bold text-slate-900 mb-4">Job Description</h2>
+                        <h2 className="text-2xl font-bold text-slate-900 mb-4">Job Description</h2>
                         <div className="prose prose-slate max-w-none">
-                            <p className="text-slate-700 leading-relaxed whitespace-pre-wrap">
+                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
                                 {jobData.job_description}
-                            </p>
+                            </ReactMarkdown>
                         </div>
                     </div>
                 )}

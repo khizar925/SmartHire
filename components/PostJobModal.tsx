@@ -26,6 +26,90 @@ export function PostJobModal({ isOpen, onClose, onJobposted }: PostJobModalProps
   const publicLink = process.env.NEXT_PUBLIC_APP_URL || (typeof window !== 'undefined' ? window.location.origin : '');
   const [publicLinkStatus, setPublicLinkStatus] = useState(false)
 
+  function formatJobDescriptionToMarkdown(content: string): string {
+    if (!content || typeof content !== 'string') return '';
+
+    content = content.trim().replace(/\r\n/g, '\n').replace(/\t/g, '    ');
+
+    const hasMarkdownHeaders = /^#{1,6}\s+.+$/m.test(content);
+    const hasMarkdownLists = /^\s*[-*+]\s+.+$/m.test(content);
+    const hasMarkdownBold = /\*\*.+?\*\*/.test(content);
+
+    if (hasMarkdownHeaders || (hasMarkdownLists && hasMarkdownBold)) {
+      return content
+        .replace(/([^\n])(#{1,6}\s+)/g, '$1\n\n$2')
+        .replace(/(#{1,6}\s+.+?)(\n)([^\n#])/g, '$1\n\n$3')
+        .replace(/([^\n\s*-])(\n[-*+]\s+)/g, '$1\n\n$2')
+        .replace(/[ \t]+$/gm, '')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim() + '\n';
+    }
+
+    const lines = content.split('\n');
+    const result: string[] = [];
+    let inList = false;
+    let previousWasBlank = false;
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+      const nextLine = i < lines.length - 1 ? lines[i + 1].trim() : '';
+
+      if (line === '') {
+        if (!previousWasBlank && result.length > 0) {
+          result.push('');
+          previousWasBlank = true;
+        }
+        inList = false;
+        continue;
+      }
+
+      previousWasBlank = false;
+
+      const isShort = line.length < 80;
+      const hasNoEndPunctuation = !/[.!?]$/.test(line);
+      const isAllCaps = line === line.toUpperCase() && /[A-Z]/.test(line);
+      const endsWithColon = line.endsWith(':');
+      const matchesHeaderPattern = /^(Overview|Summary|Description|Responsibilities|Requirements|Qualifications|Skills|Benefits|About|Role|Position|Duties|Experience|Education|Salary|Career|Tools|Technologies|Key|Primary|Core|Technical|Soft|Preferred|Required)/i.test(line);
+
+      const isHeader = (matchesHeaderPattern && isShort) || (isAllCaps && isShort && hasNoEndPunctuation) || (endsWithColon && isShort);
+
+      if (isHeader) {
+        if (inList) {
+          result.push('');
+          inList = false;
+        }
+
+        const level = /^(Overview|Key Responsibilities|Requirements|Qualifications|Skills|About|Benefits|Salary|Career Path|Tools|Technologies)/i.test(line) ? 2 : 3;
+        const headerText = line.replace(/:+$/, '').trim();
+
+        if (result.length > 0 && result[result.length - 1] !== '') result.push('');
+        result.push(`${'#'.repeat(level)} ${headerText}`);
+        result.push('');
+        continue;
+      }
+
+      const isList = /^[-•*+‣▸▹►▪▫]\s+/.test(line) || /^\d+\.\s+/.test(line) || /^[a-z]\.\s+/i.test(line) || (/^(\s{2,}|\t)/.test(line) && line.length < 150);
+
+      if (isList) {
+        if (!inList && result.length > 0 && result[result.length - 1] !== '') result.push('');
+        inList = true;
+        const listItem = line.replace(/^[-•*+‣▸▹►▪▫]\s+/, '').replace(/^\d+\.\s+/, '').replace(/^[a-z]\.\s+/i, '').replace(/^\s+/, '').trim();
+        result.push(`- ${listItem}`);
+        continue;
+      }
+
+      if (inList) {
+        result.push('');
+        inList = false;
+      }
+
+      const formattedLine = line.includes('**') ? line : line.replace(/^([A-Z][a-zA-Z\s&]+):/g, '**$1**:');
+      result.push(formattedLine);
+    }
+
+    return result.join('\n').trim() + '\n';
+  }
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -43,6 +127,7 @@ export function PostJobModal({ isOpen, onClose, onJobposted }: PostJobModalProps
     setErrorDetails([]);
 
     try {
+      const formattedJobDescription = formatJobDescriptionToMarkdown(formData.jobDescription);
       const response = await fetch('/api/jobs', {
         method: 'POST',
         headers: {
@@ -53,7 +138,7 @@ export function PostJobModal({ isOpen, onClose, onJobposted }: PostJobModalProps
           company_name: formData.companyName,
           job_location: formData.location,
           employment_type: formData.employmentType,
-          job_description: formData.jobDescription,
+          job_description: formattedJobDescription,
         }),
       });
 
@@ -90,7 +175,7 @@ export function PostJobModal({ isOpen, onClose, onJobposted }: PostJobModalProps
   };
 
   const jobLink = createdJobId ? `${publicLink}/jobs/${createdJobId}` : publicLink || '';
-  
+
   const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) {
       onClose();
