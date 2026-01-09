@@ -21,7 +21,7 @@ const plans = [
     },
     {
         name: 'Pro',
-        price: '$20',
+        price: '$5',
         period: '/month',
         description: 'For power users and recruiters who want AI-driven advantages.',
         features: [
