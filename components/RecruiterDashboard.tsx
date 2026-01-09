@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Briefcase, Loader2, AlertCircle, MapPin, Clock, Users, Calendar, Plus } from 'lucide-react';
 import { Button } from './Button';
 import { PostJobModal } from './PostJobModal';
+import { JobDetailsModal } from './JobDetailsModal';
 import type { Job } from '@/types';
 
 export function RecruiterDashboard({ firstName }: { firstName?: string }) {
@@ -14,6 +15,8 @@ export function RecruiterDashboard({ firstName }: { firstName?: string }) {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedJob, setSelectedJob] = useState<Job | null>(null);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
 
 
   useEffect (() => {
@@ -172,8 +175,8 @@ export function RecruiterDashboard({ firstName }: { firstName?: string }) {
                     variant="primary"
                     className="w-full"
                     onClick={() => {
-                      // TODO: Navigate to job details page
-                      console.log('View job details:', job.id);
+                      setSelectedJob(job);
+                      setIsDetailsModalOpen(true);
                     }}
                   >
                     View Details
@@ -189,6 +192,15 @@ export function RecruiterDashboard({ firstName }: { firstName?: string }) {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onJobposted={handleJobPosted} // Pass the callback
+      />
+
+      <JobDetailsModal
+        isOpen={isDetailsModalOpen}
+        onClose={() => {
+          setIsDetailsModalOpen(false);
+          setSelectedJob(null);
+        }}
+        job={selectedJob}
       />
     </>
   );

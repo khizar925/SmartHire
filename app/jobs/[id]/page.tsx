@@ -30,7 +30,6 @@ type EducationLevel = 'Bachelors' | 'Master' | 'PHD' | '';
 type ApplicationFormData = {
     name: string;
     email: string;
-    countryCode: string;
     phoneNumber: string;
     address: string;
     educationLevel: EducationLevel;
@@ -42,7 +41,6 @@ type ApplicationFormData = {
 type FormErrors = {
     name?: string;
     email?: string;
-    countryCode?: string;
     phoneNumber?: string;
     address?: string;
     educationLevel?: string;
@@ -50,30 +48,6 @@ type FormErrors = {
     coverLetter?: string;
     resume?: string;
 }
-
-const COUNTRY_CODES = [
-    { code: '+92', country: 'PK' },
-    { code: '+1', country: 'US' },
-    { code: '+44', country: 'UK' },
-    { code: '+1', country: 'CA' },
-    { code: '+61', country: 'AU' },
-    { code: '+91', country: 'IN' },
-    { code: '+49', country: 'DE' },
-    { code: '+33', country: 'FR' },
-    { code: '+81', country: 'JP' },
-    { code: '+86', country: 'CN' },
-    { code: '+7', country: 'RU' },
-    { code: '+55', country: 'BR' },
-    { code: '+52', country: 'MX' },
-    { code: '+39', country: 'IT' },
-    { code: '+34', country: 'ES' },
-    { code: '+31', country: 'NL' },
-    { code: '+46', country: 'SE' },
-    { code: '+47', country: 'NO' },
-    { code: '+45', country: 'DK' },
-    { code: '+41', country: 'CH' },
-    { code: '+32', country: 'BE' },
-];
 
 export default function JobPage({ params }: Props) {
     const { id } = use(params);
@@ -85,7 +59,6 @@ export default function JobPage({ params }: Props) {
     const [formData, setFormData] = useState<ApplicationFormData>({
         name: '',
         email: '',
-        countryCode: '+92',
         phoneNumber: '',
         address: '',
         educationLevel: '',
@@ -174,10 +147,6 @@ export default function JobPage({ params }: Props) {
             errors.email = 'Please enter a valid email address';
         }
 
-        if (!formData.countryCode) {
-            errors.countryCode = 'Country code is required';
-        }
-
         if (!formData.phoneNumber.trim()) {
             errors.phoneNumber = 'Phone number is required';
         } else if (!validatePhoneNumber(formData.phoneNumber)) {
@@ -253,7 +222,6 @@ export default function JobPage({ params }: Props) {
             setFormData({
                 name: '',
                 email: '',
-                countryCode: '+1',
                 phoneNumber: '',
                 address: '',
                 educationLevel: '',
@@ -461,43 +429,21 @@ export default function JobPage({ params }: Props) {
 
                             {/* Phone Number */}
                             <div>
-                                <label className="block text-sm font-semibold text-slate-900 mb-2">
+                                <label htmlFor="phoneNumber" className="block text-sm font-semibold text-slate-900 mb-2">
                                     Phone Number *
                                 </label>
-                                <div className="flex gap-2">
-                                    <div className="w-32">
-                                        <select
-                                            id="countryCode"
-                                            name="countryCode"
-                                            value={formData.countryCode}
-                                            onChange={handleInputChange}
-                                            className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent ${formErrors.countryCode ? 'border-red-300' : 'border-slate-300'
-                                                }`}
-                                        >
-                                            {COUNTRY_CODES.map((item) => (
-                                                <option key={`${item.code}-${item.country}`} value={item.code}>
-                                                    {item.code} ({item.country})
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div className="flex-1">
-                                        <input
-                                            type="tel"
-                                            id="phoneNumber"
-                                            name="phoneNumber"
-                                            value={formData.phoneNumber}
-                                            onChange={handleInputChange}
-                                            className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent ${formErrors.phoneNumber ? 'border-red-300' : 'border-slate-300'
-                                                }`}
-                                            placeholder="Enter your phone number"
-                                        />
-                                    </div>
-                                </div>
-                                {(formErrors.countryCode || formErrors.phoneNumber) && (
-                                    <p className="mt-1 text-sm text-red-600">
-                                        {formErrors.countryCode || formErrors.phoneNumber}
-                                    </p>
+                                <input
+                                    type="tel"
+                                    id="phoneNumber"
+                                    name="phoneNumber"
+                                    value={formData.phoneNumber}
+                                    onChange={handleInputChange}
+                                    className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent ${formErrors.phoneNumber ? 'border-red-300' : 'border-slate-300'
+                                        }`}
+                                    placeholder="Enter your phone number"
+                                />
+                                {formErrors.phoneNumber && (
+                                    <p className="mt-1 text-sm text-red-600">{formErrors.phoneNumber}</p>
                                 )}
                             </div>
 
