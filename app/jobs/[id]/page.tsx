@@ -4,6 +4,7 @@
 import { use, useState, useEffect } from 'react';
 import { Loader2, AlertCircle, MapPin, Clock, Briefcase, Upload } from 'lucide-react';
 import { Button } from '@/components/Button';
+import { useSearchParams } from 'next/navigation';
 
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -51,6 +52,8 @@ type FormErrors = {
 
 export default function JobPage({ params }: Props) {
     const { id } = use(params);
+    const searchParams = useSearchParams();
+    const apply = searchParams.get('apply');
     const [jobData, setJobData] = useState<JobData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -99,6 +102,13 @@ export default function JobPage({ params }: Props) {
     useEffect(() => {
         fetchData();
     }, [id]);
+
+    useEffect(() => {
+        if (apply === 'true') {
+            setActiveTab('application');
+        }
+    }, [apply]);
+
 
     const formatEmploymentType = (type: EmploymentType) => {
         return type.replace('-', ' ').split(' ').map(word =>
@@ -212,24 +222,18 @@ export default function JobPage({ params }: Props) {
         }
 
         setIsSubmitting(true);
+        // todo
 
-        // Simulate form submission (frontend only as per requirements)
-        setTimeout(() => {
-            setIsSubmitting(false);
-            setSubmitMessage({ type: 'success', text: 'Application submitted successfully! (This is a frontend-only form)' });
-
-            // Reset form
-            setFormData({
-                name: '',
-                email: '',
-                phoneNumber: '',
-                address: '',
-                educationLevel: '',
-                yearsOfExperience: '',
-                coverLetter: '',
-                resume: null,
-            });
-        }, 1000);
+        setFormData({
+            name: '',
+            email: '',
+            phoneNumber: '',
+            address: '',
+            educationLevel: '',
+            yearsOfExperience: '',
+            coverLetter: '',
+            resume: null,
+        });
     };
 
     // Loading State
