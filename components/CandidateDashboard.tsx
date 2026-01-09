@@ -6,6 +6,7 @@ import { Briefcase, Loader2, AlertCircle, MapPin, Clock, Users, Calendar, Chevro
 import { Button } from './Button';
 import { formatTimeAgo, isNewJob } from '@/lib/date-utils';
 import type { Job } from '@/types';
+import Link from 'next/link';
 
 interface PaginatedJobsResponse {
   jobs: Job[];
@@ -25,6 +26,7 @@ export function CandidateDashboard({ firstName }: { firstName?: string }) {
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [hasMore, setHasMore] = useState(false);
+  const publicLink = process.env.NEXT_PUBLIC_APP_URL || (typeof window !== 'undefined' ? window.location.origin : '');
   const limit = 12;
 
   useEffect(() => {
@@ -223,16 +225,14 @@ export function CandidateDashboard({ firstName }: { firstName?: string }) {
                     </p>
 
                     {/* Apply Now Button */}
-                    <Button
-                      variant="primary"
-                      className="w-full mt-auto"
-                      onClick={() => {
-                        // TODO: Implement application functionality
-                        alert('Application feature coming soon!');
-                      }}
-                    >
-                      Apply Now
-                    </Button>
+                    <Link href={`${publicLink}/jobs/${job.id}?apply=true`}>
+                      <Button
+                        variant="primary"
+                        className="w-full mt-auto"
+                      >
+                        Apply Now
+                      </Button>
+                    </Link>
                   </div>
                 );
               })}
