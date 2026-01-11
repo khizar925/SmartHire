@@ -85,11 +85,6 @@ export function CandidateDashboard({ firstName }: { firstName?: string }) {
     }
   };
 
-  const truncateDescription = (text: string, maxLength: number = 150) => {
-    if (text.length <= maxLength) return text;
-    return text.substring(0, maxLength).trim() + '...';
-  };
-
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= totalPages) {
       setPage(newPage);
@@ -218,12 +213,6 @@ export function CandidateDashboard({ firstName }: { firstName?: string }) {
                         <span>Posted {formatTimeAgo(job.created_at)}</span>
                       </div>
                     </div>
-
-                    {/* Description Preview */}
-                    <p className="text-sm text-slate-600 line-clamp-3 mb-4">
-                      {truncateDescription(job.job_description)}
-                    </p>
-
                     {/* Apply Now Button */}
                     <Link href={`${publicLink}/jobs/${job.id}?apply=true`}>
                       <Button
