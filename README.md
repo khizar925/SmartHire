@@ -45,12 +45,6 @@ Smart Hire is an advanced recruitment management system that leverages AI to str
 5. **Open your browser:**
    Navigate to [http://localhost:3000](http://localhost:3000)
 
-## 📦 Build for Production
-
-```bash
-npm run build
-npm start
-```
 
 ## 🛠️ Tech Stack
 
