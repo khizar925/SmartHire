@@ -1,7 +1,5 @@
-// components/JobDetailsModal.tsx
-'use client';
-
-import { X, MapPin, Clock, Users, Calendar, Briefcase } from 'lucide-react';
+import { X, MapPin, Clock, Users, Calendar, Briefcase, ExternalLink } from 'lucide-react';
+import Link from 'next/link';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import type { Job } from '@/types';
@@ -47,36 +45,49 @@ export function JobDetailsModal({ isOpen, onClose, job }: JobDetailsModalProps) 
       {/* Modal */}
       <div className="relative z-50 w-full max-w-4xl max-h-[90vh] bg-white rounded-xl shadow-2xl overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-slate-200 flex-shrink-0">
-          <div className="flex items-center gap-3 flex-1">
-            <Briefcase className="h-6 w-6 text-primary-600 flex-shrink-0" />
-            <h2 className="text-2xl font-bold text-slate-900 flex-1">{job.job_title}</h2>
-            <span
-              className={`px-3 py-1 rounded-full text-xs font-semibold flex-shrink-0 ${
-                job.status === 'active'
+        <div className="p-6 border-b border-slate-200 flex-shrink-0">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3 flex-1">
+              <Briefcase className="h-6 w-6 text-primary-600 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <h2 className="text-2xl font-bold text-slate-900 truncate">{job.job_title}</h2>
+              </div>
+              <span
+                className={`px-3 py-1 rounded-full text-xs font-semibold flex-shrink-0 ${job.status === 'active'
                   ? 'bg-green-100 text-green-700'
                   : 'bg-slate-100 text-slate-700'
-              }`}
+                  }`}
+              >
+                {job.status === 'active' ? 'Active' : 'Closed'}
+              </span>
+            </div>
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-slate-100 rounded-lg transition-colors ml-4"
+              aria-label="Close modal"
             >
-              {job.status === 'active' ? 'Active' : 'Closed'}
-            </span>
+              <X className="h-5 w-5 text-slate-600" />
+            </button>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-slate-100 rounded-lg transition-colors ml-4"
-            aria-label="Close modal"
-          >
-            <X className="h-5 w-5 text-slate-600" />
-          </button>
         </div>
 
         {/* Content - Scrollable */}
         <div className="overflow-y-auto flex-1">
           <div className="p-6 space-y-6">
             {/* Company Name */}
-            <div>
-              <h3 className="text-lg font-semibold text-slate-900 mb-2">Company</h3>
-              <p className="text-slate-700">{job.company_name}</p>
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <h3 className="text-lg font-semibold text-slate-900 mb-2">Company</h3>
+                <p className="text-slate-700">{job.company_name}</p>
+              </div>
+              <Link
+                href={`/dashboard/jobs/${job.id}/applications`}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-bold hover:bg-primary-700 transition-all shadow-sm flex-shrink-0"
+              >
+                <Users className="h-4 w-4" />
+                View All Applications
+                <ExternalLink className="h-3.5 w-3.5" />
+              </Link>
             </div>
 
             {/* Details Grid */}
@@ -143,20 +154,6 @@ export function JobDetailsModal({ isOpen, onClose, job }: JobDetailsModalProps) 
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>
                   {job.job_description}
                 </ReactMarkdown>
-              </div>
-            </div>
-
-            {/* Metadata */}
-            <div className="pt-4 border-t border-slate-200">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-xs text-slate-500">
-                <div>
-                  <span className="font-medium">Created:</span> {formatDate(job.created_at)}
-                </div>
-                {job.updated_at && job.updated_at !== job.created_at && (
-                  <div>
-                    <span className="font-medium">Last updated:</span> {formatDate(job.updated_at)}
-                  </div>
-                )}
               </div>
             </div>
           </div>

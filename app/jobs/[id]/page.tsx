@@ -2,9 +2,10 @@
 
 'use client';
 import { use, useState, useEffect } from 'react';
-import { Loader2, AlertCircle, MapPin, Clock, Briefcase, Upload } from 'lucide-react';
+import { Loader2, AlertCircle, MapPin, Clock, Briefcase, Upload, CheckCircle, X } from 'lucide-react';
 import { Button } from '@/components/Button';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { motion, AnimatePresence } from 'framer-motion';
 
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -53,6 +54,7 @@ type FormErrors = {
 export default function JobPage({ params }: Props) {
     const { id } = use(params);
     const searchParams = useSearchParams();
+    const router = useRouter();
     const apply = searchParams.get('apply');
     const [jobData, setJobData] = useState<JobData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -108,6 +110,16 @@ export default function JobPage({ params }: Props) {
             setActiveTab('application');
         }
     }, [apply]);
+
+    // Auto-clear submit message
+    useEffect(() => {
+        if (submitMessage) {
+            const timer = setTimeout(() => {
+                setSubmitMessage(null);
+            }, 5000);
+            return () => clearTimeout(timer);
+        }
+    }, [submitMessage]);
 
 
     const formatEmploymentType = (type: EmploymentType) => {
@@ -222,18 +234,52 @@ export default function JobPage({ params }: Props) {
         }
 
         setIsSubmitting(true);
-        // todo
 
-        setFormData({
-            name: '',
-            email: '',
-            phoneNumber: '',
-            address: '',
-            educationLevel: '',
-            yearsOfExperience: '',
-            coverLetter: '',
-            resume: null,
-        });
+        try {
+            const submitData = new FormData();
+            submitData.append('jobId', id);
+            submitData.append('name', formData.name);
+            submitData.append('email', formData.email);
+            submitData.append('phoneNumber', formData.phoneNumber);
+            submitData.append('address', formData.address);
+            submitData.append('educationLevel', formData.educationLevel);
+            submitData.append('yearsOfExperience', formData.yearsOfExperience);
+            submitData.append('coverLetter', formData.coverLetter);
+            if (formData.resume) {
+                submitData.append('resume', formData.resume);
+            }
+
+            const response = await fetch('/api/application', {
+                method: 'POST',
+                body: submitData,
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                setSubmitMessage({
+                    type: 'success',
+                    text: 'Your application has been submitted successfully! The recruiter will review it soon.'
+                });
+
+                // Redirect to dashboard after a short delay
+                setTimeout(() => {
+                    router.push('/dashboard');
+                }, 2000);
+            } else {
+                setSubmitMessage({
+                    type: 'error',
+                    text: result.error || 'Failed to submit application. Please try again.'
+                });
+            }
+        } catch (err) {
+            setSubmitMessage({
+                type: 'error',
+                text: 'An unexpected error occurred. Please check your connection and try again.'
+            });
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     // Loading State
@@ -380,15 +426,6 @@ export default function JobPage({ params }: Props) {
                 {activeTab === 'application' && (
                     <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 md:p-8 mb-6">
                         <h2 className="text-2xl font-bold text-slate-900 mb-6">Apply for this Position</h2>
-
-                        {submitMessage && (
-                            <div className={`mb-6 p-4 rounded-lg ${submitMessage.type === 'success'
-                                ? 'bg-green-50 border border-green-200 text-green-800'
-                                : 'bg-red-50 border border-red-200 text-red-800'
-                                }`}>
-                                <p className="text-sm font-medium">{submitMessage.text}</p>
-                            </div>
-                        )}
 
                         <form onSubmit={handleSubmit} className="space-y-6">
                             {/* Name */}
@@ -602,6 +639,47 @@ export default function JobPage({ params }: Props) {
                     </div>
                 )}
             </div>
+
+            {/* Floating Toast Notification */}
+            <AnimatePresence>
+                {submitMessage && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 50, scale: 0.9 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
+                        className="fixed bottom-6 right-6 z-[100] max-w-sm w-full"
+                    >
+                        <div className={`p-4 rounded-xl shadow-2xl border flex items-start gap-3 ${submitMessage.type === 'success'
+                            ? 'bg-white border-green-100'
+                            : 'bg-white border-red-100'
+                            }`}>
+                            <div className={`p-2 rounded-lg flex-shrink-0 ${submitMessage.type === 'success' ? 'bg-green-50' : 'bg-red-50'
+                                }`}>
+                                {submitMessage.type === 'success' ? (
+                                    <CheckCircle className="h-5 w-5 text-green-600" />
+                                ) : (
+                                    <AlertCircle className="h-5 w-5 text-red-600" />
+                                )}
+                            </div>
+                            <div className="flex-1 pt-0.5">
+                                <p className={`text-sm font-bold ${submitMessage.type === 'success' ? 'text-green-900' : 'text-red-900'
+                                    }`}>
+                                    {submitMessage.type === 'success' ? 'Success!' : 'System Error'}
+                                </p>
+                                <p className="text-sm text-slate-600 mt-1">
+                                    {submitMessage.text}
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => setSubmitMessage(null)}
+                                className="p-1 hover:bg-slate-100 rounded-md transition-colors"
+                            >
+                                <X className="h-4 w-4 text-slate-400" />
+                            </button>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }
