@@ -6,6 +6,7 @@ import { Loader2, AlertCircle, MapPin, Clock, Briefcase, Upload, CheckCircle, X 
 import { Button } from '@/components/Button';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '@clerk/nextjs';
 
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -56,8 +57,30 @@ export default function JobPage({ params }: Props) {
     const searchParams = useSearchParams();
     const router = useRouter();
     const apply = searchParams.get('apply');
+    const { userId } = useAuth();
     const [jobData, setJobData] = useState<JobData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [hasApplied, setHasApplied] = useState(false);
+    const [applicationStatus, setApplicationStatus] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (userId && id) {
+            checkApplicationStatus();
+        }
+    }, [userId, id]);
+
+    const checkApplicationStatus = async () => {
+        try {
+            const res = await fetch(`/api/application?jobId=${id}&check=true`);
+            const data = await res.json();
+            if (data.hasApplied) {
+                setHasApplied(true);
+                setApplicationStatus(data.application?.status || 'pending');
+            }
+        } catch (e) {
+            console.error('Error checking application status:', e);
+        }
+    };
     const [error, setError] = useState<string | null>(null);
 
     // Form state
@@ -425,217 +448,245 @@ export default function JobPage({ params }: Props) {
                 {/* Apply Form */}
                 {activeTab === 'application' && (
                     <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 md:p-8 mb-6">
-                        <h2 className="text-2xl font-bold text-slate-900 mb-6">Apply for this Position</h2>
-
-                        <form onSubmit={handleSubmit} className="space-y-6">
-                            {/* Name */}
-                            <div>
-                                <label htmlFor="name" className="block text-sm font-semibold text-slate-900 mb-2">
-                                    Name *
-                                </label>
-                                <input
-                                    type="text"
-                                    id="name"
-                                    name="name"
-                                    value={formData.name}
-                                    onChange={handleInputChange}
-                                    className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent ${formErrors.name ? 'border-red-300' : 'border-slate-300'
-                                        }`}
-                                    placeholder="Enter your full name"
-                                />
-                                {formErrors.name && (
-                                    <p className="mt-1 text-sm text-red-600">{formErrors.name}</p>
-                                )}
-                            </div>
-
-                            {/* Email */}
-                            <div>
-                                <label htmlFor="email" className="block text-sm font-semibold text-slate-900 mb-2">
-                                    Email *
-                                </label>
-                                <input
-                                    type="email"
-                                    id="email"
-                                    name="email"
-                                    value={formData.email}
-                                    onChange={handleInputChange}
-                                    className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent ${formErrors.email ? 'border-red-300' : 'border-slate-300'
-                                        }`}
-                                    placeholder="Enter your email address"
-                                />
-                                {formErrors.email && (
-                                    <p className="mt-1 text-sm text-red-600">{formErrors.email}</p>
-                                )}
-                            </div>
-
-                            {/* Phone Number */}
-                            <div>
-                                <label htmlFor="phoneNumber" className="block text-sm font-semibold text-slate-900 mb-2">
-                                    Phone Number *
-                                </label>
-                                <input
-                                    type="tel"
-                                    id="phoneNumber"
-                                    name="phoneNumber"
-                                    value={formData.phoneNumber}
-                                    onChange={handleInputChange}
-                                    className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent ${formErrors.phoneNumber ? 'border-red-300' : 'border-slate-300'
-                                        }`}
-                                    placeholder="Enter your phone number"
-                                />
-                                {formErrors.phoneNumber && (
-                                    <p className="mt-1 text-sm text-red-600">{formErrors.phoneNumber}</p>
-                                )}
-                            </div>
-
-                            {/* Address */}
-                            <div>
-                                <label htmlFor="address" className="block text-sm font-semibold text-slate-900 mb-2">
-                                    Address *
-                                </label>
-                                <textarea
-                                    id="address"
-                                    name="address"
-                                    value={formData.address}
-                                    onChange={handleInputChange}
-                                    rows={3}
-                                    className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none ${formErrors.address ? 'border-red-300' : 'border-slate-300'
-                                        }`}
-                                    placeholder="Enter your address"
-                                />
-                                {formErrors.address && (
-                                    <p className="mt-1 text-sm text-red-600">{formErrors.address}</p>
-                                )}
-                            </div>
-
-                            {/* Education Level */}
-                            <div>
-                                <label htmlFor="educationLevel" className="block text-sm font-semibold text-slate-900 mb-2">
-                                    Education Level *
-                                </label>
-                                <select
-                                    id="educationLevel"
-                                    name="educationLevel"
-                                    value={formData.educationLevel}
-                                    onChange={handleInputChange}
-                                    className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent ${formErrors.educationLevel ? 'border-red-300' : 'border-slate-300'
-                                        }`}
-                                >
-                                    <option value="">Select education level</option>
-                                    <option value="bachelors">Bachelor's Degree</option>
-                                    <option value="master">Master's Degree</option>
-                                    <option value="phd">PhD</option>
-                                </select>
-                                {formErrors.educationLevel && (
-                                    <p className="mt-1 text-sm text-red-600">{formErrors.educationLevel}</p>
-                                )}
-                            </div>
-
-                            {/* Years of Experience */}
-                            <div>
-                                <label htmlFor="yearsOfExperience" className="block text-sm font-semibold text-slate-900 mb-2">
-                                    Years of Experience in Relevant Field *
-                                </label>
-                                <input
-                                    type="number"
-                                    id="yearsOfExperience"
-                                    name="yearsOfExperience"
-                                    value={formData.yearsOfExperience}
-                                    onChange={handleInputChange}
-                                    min="0"
-                                    step="0.5"
-                                    className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent ${formErrors.yearsOfExperience ? 'border-red-300' : 'border-slate-300'
-                                        }`}
-                                    placeholder="Enter years of experience"
-                                />
-                                {formErrors.yearsOfExperience && (
-                                    <p className="mt-1 text-sm text-red-600">{formErrors.yearsOfExperience}</p>
-                                )}
-                            </div>
-
-                            {/* Cover Letter */}
-                            <div>
-                                <label htmlFor="coverLetter" className="block text-sm font-semibold text-slate-900 mb-2">
-                                    Cover Letter *
-                                </label>
-                                <textarea
-                                    id="coverLetter"
-                                    name="coverLetter"
-                                    value={formData.coverLetter}
-                                    onChange={handleInputChange}
-                                    rows={6}
-                                    className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none ${formErrors.coverLetter ? 'border-red-300' : 'border-slate-300'
-                                        }`}
-                                    placeholder="Write your cover letter here..."
-                                />
-                                {formErrors.coverLetter && (
-                                    <p className="mt-1 text-sm text-red-600">{formErrors.coverLetter}</p>
-                                )}
-                            </div>
-
-                            {/* Resume/CV */}
-                            <div>
-                                <label className="block text-sm font-semibold text-slate-900 mb-2">
-                                    Resume/CV *
-                                </label>
-                                <div className="space-y-2">
-                                    <label
-                                        htmlFor="resume"
-                                        className={`flex items-center justify-center gap-2 w-full px-4 py-3 border-2 border-dashed rounded-lg cursor-pointer transition-colors ${formErrors.resume
-                                            ? 'border-red-300 bg-red-50 hover:bg-red-100'
-                                            : 'border-slate-300 bg-slate-50 hover:bg-slate-100'
-                                            }`}
-                                    >
-                                        <Upload className="h-5 w-5 text-slate-600" />
-                                        <span className="text-sm font-medium text-slate-700">
-                                            {formData.resume ? formData.resume.name : 'Choose file or drag and drop'}
-                                        </span>
-                                    </label>
-                                    <input
-                                        type="file"
-                                        id="resume"
-                                        name="resume"
-                                        accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                                        onChange={handleFileChange}
-                                        className="hidden"
-                                    />
-                                    {formData.resume && (
-                                        <div className="flex items-center gap-2 text-sm text-slate-600">
-                                            <span>Selected: {formData.resume.name}</span>
-                                            <span className="text-slate-400">
-                                                ({(formData.resume.size / 1024 / 1024).toFixed(2)} MB)
-                                            </span>
-                                        </div>
-                                    )}
-                                    <p className="text-xs text-slate-500">
-                                        Accepted formats: PDF, DOC, DOCX (Max size: 5MB)
-                                    </p>
+                        {hasApplied ? (
+                            <div className="text-center py-12">
+                                <div className="h-20 w-20 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                                    <CheckCircle className="h-10 w-10 text-green-600" />
                                 </div>
-                                {formErrors.resume && (
-                                    <p className="mt-1 text-sm text-red-600">{formErrors.resume}</p>
-                                )}
+                                <h3 className="text-2xl font-bold text-slate-900 mb-2">Application Already Submitted</h3>
+                                <p className="text-slate-600 mb-8 max-w-md mx-auto">
+                                    You have already applied for this position. Your current application status is:
+                                    <span className={`block mt-2 text-lg font-bold uppercase tracking-wider ${applicationStatus === 'rejected' ? 'text-red-600' :
+                                        applicationStatus === 'shortlisted' ? 'text-green-600' :
+                                            'text-primary-600'
+                                        }`}>
+                                        {applicationStatus}
+                                    </span>
+                                </p>
+                                <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                                    <Button variant="primary" onClick={() => router.push('/dashboard')}>
+                                        View All Applications
+                                    </Button>
+                                    <Button variant="secondary" onClick={() => setActiveTab('overview')}>
+                                        Return to Job Overview
+                                    </Button>
+                                </div>
                             </div>
+                        ) : (
+                            <>
+                                <h2 className="text-2xl font-bold text-slate-900 mb-6">Apply for this Position</h2>
 
-                            {/* Submit Button */}
-                            <div className="pt-4 flex justify-center">
-                                <Button
-                                    type="submit"
-                                    variant="primary"
-                                    size="lg"
-                                    disabled={isSubmitting || jobData?.status !== 'active'}
-                                    className="w-full sm:w-auto"
-                                >
-                                    {isSubmitting ? (
-                                        <>
-                                            <Loader2 className="h-5 w-5 animate-spin mr-2" />
-                                            Submitting...
-                                        </>
-                                    ) : (
-                                        'Submit Application'
-                                    )}
-                                </Button>
-                            </div>
-                        </form>
+                                <form onSubmit={handleSubmit} className="space-y-6">
+                                    {/* Name */}
+                                    <div>
+                                        <label htmlFor="name" className="block text-sm font-semibold text-slate-900 mb-2">
+                                            Name *
+                                        </label>
+                                        <input
+                                            type="text"
+                                            id="name"
+                                            name="name"
+                                            value={formData.name}
+                                            onChange={handleInputChange}
+                                            className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent ${formErrors.name ? 'border-red-300' : 'border-slate-300'
+                                                }`}
+                                            placeholder="Enter your full name"
+                                        />
+                                        {formErrors.name && (
+                                            <p className="mt-1 text-sm text-red-600">{formErrors.name}</p>
+                                        )}
+                                    </div>
+
+                                    {/* Email */}
+                                    <div>
+                                        <label htmlFor="email" className="block text-sm font-semibold text-slate-900 mb-2">
+                                            Email *
+                                        </label>
+                                        <input
+                                            type="email"
+                                            id="email"
+                                            name="email"
+                                            value={formData.email}
+                                            onChange={handleInputChange}
+                                            className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent ${formErrors.email ? 'border-red-300' : 'border-slate-300'
+                                                }`}
+                                            placeholder="Enter your email address"
+                                        />
+                                        {formErrors.email && (
+                                            <p className="mt-1 text-sm text-red-600">{formErrors.email}</p>
+                                        )}
+                                    </div>
+
+                                    {/* Phone Number */}
+                                    <div>
+                                        <label htmlFor="phoneNumber" className="block text-sm font-semibold text-slate-900 mb-2">
+                                            Phone Number *
+                                        </label>
+                                        <input
+                                            type="tel"
+                                            id="phoneNumber"
+                                            name="phoneNumber"
+                                            value={formData.phoneNumber}
+                                            onChange={handleInputChange}
+                                            className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent ${formErrors.phoneNumber ? 'border-red-300' : 'border-slate-300'
+                                                }`}
+                                            placeholder="Enter your phone number"
+                                        />
+                                        {formErrors.phoneNumber && (
+                                            <p className="mt-1 text-sm text-red-600">{formErrors.phoneNumber}</p>
+                                        )}
+                                    </div>
+
+                                    {/* Address */}
+                                    <div>
+                                        <label htmlFor="address" className="block text-sm font-semibold text-slate-900 mb-2">
+                                            Address *
+                                        </label>
+                                        <textarea
+                                            id="address"
+                                            name="address"
+                                            value={formData.address}
+                                            onChange={handleInputChange}
+                                            rows={3}
+                                            className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none ${formErrors.address ? 'border-red-300' : 'border-slate-300'
+                                                }`}
+                                            placeholder="Enter your address"
+                                        />
+                                        {formErrors.address && (
+                                            <p className="mt-1 text-sm text-red-600">{formErrors.address}</p>
+                                        )}
+                                    </div>
+
+                                    {/* Education Level */}
+                                    <div>
+                                        <label htmlFor="educationLevel" className="block text-sm font-semibold text-slate-900 mb-2">
+                                            Education Level *
+                                        </label>
+                                        <select
+                                            id="educationLevel"
+                                            name="educationLevel"
+                                            value={formData.educationLevel}
+                                            onChange={handleInputChange}
+                                            className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent ${formErrors.educationLevel ? 'border-red-300' : 'border-slate-300'
+                                                }`}
+                                        >
+                                            <option value="">Select education level</option>
+                                            <option value="bachelors">Bachelor's Degree</option>
+                                            <option value="master">Master's Degree</option>
+                                            <option value="phd">PhD</option>
+                                        </select>
+                                        {formErrors.educationLevel && (
+                                            <p className="mt-1 text-sm text-red-600">{formErrors.educationLevel}</p>
+                                        )}
+                                    </div>
+
+                                    {/* Years of Experience */}
+                                    <div>
+                                        <label htmlFor="yearsOfExperience" className="block text-sm font-semibold text-slate-900 mb-2">
+                                            Years of Experience in Relevant Field *
+                                        </label>
+                                        <input
+                                            type="number"
+                                            id="yearsOfExperience"
+                                            name="yearsOfExperience"
+                                            value={formData.yearsOfExperience}
+                                            onChange={handleInputChange}
+                                            min="0"
+                                            step="0.5"
+                                            className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent ${formErrors.yearsOfExperience ? 'border-red-300' : 'border-slate-300'
+                                                }`}
+                                            placeholder="Enter years of experience"
+                                        />
+                                        {formErrors.yearsOfExperience && (
+                                            <p className="mt-1 text-sm text-red-600">{formErrors.yearsOfExperience}</p>
+                                        )}
+                                    </div>
+
+                                    {/* Cover Letter */}
+                                    <div>
+                                        <label htmlFor="coverLetter" className="block text-sm font-semibold text-slate-900 mb-2">
+                                            Cover Letter *
+                                        </label>
+                                        <textarea
+                                            id="coverLetter"
+                                            name="coverLetter"
+                                            value={formData.coverLetter}
+                                            onChange={handleInputChange}
+                                            rows={6}
+                                            className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none ${formErrors.coverLetter ? 'border-red-300' : 'border-slate-300'
+                                                }`}
+                                            placeholder="Write your cover letter here..."
+                                        />
+                                        {formErrors.coverLetter && (
+                                            <p className="mt-1 text-sm text-red-600">{formErrors.coverLetter}</p>
+                                        )}
+                                    </div>
+
+                                    {/* Resume/CV */}
+                                    <div>
+                                        <label className="block text-sm font-semibold text-slate-900 mb-2">
+                                            Resume/CV *
+                                        </label>
+                                        <div className="space-y-2">
+                                            <label
+                                                htmlFor="resume"
+                                                className={`flex items-center justify-center gap-2 w-full px-4 py-3 border-2 border-dashed rounded-lg cursor-pointer transition-colors ${formErrors.resume
+                                                    ? 'border-red-300 bg-red-50 hover:bg-red-100'
+                                                    : 'border-slate-300 bg-slate-50 hover:bg-slate-100'
+                                                    }`}
+                                            >
+                                                <Upload className="h-5 w-5 text-slate-600" />
+                                                <span className="text-sm font-medium text-slate-700">
+                                                    {formData.resume ? formData.resume.name : 'Choose file or drag and drop'}
+                                                </span>
+                                            </label>
+                                            <input
+                                                type="file"
+                                                id="resume"
+                                                name="resume"
+                                                accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                                                onChange={handleFileChange}
+                                                className="hidden"
+                                            />
+                                            {formData.resume && (
+                                                <div className="flex items-center gap-2 text-sm text-slate-600">
+                                                    <span>Selected: {formData.resume.name}</span>
+                                                    <span className="text-slate-400">
+                                                        ({(formData.resume.size / 1024 / 1024).toFixed(2)} MB)
+                                                    </span>
+                                                </div>
+                                            )}
+                                            <p className="text-xs text-slate-500">
+                                                Accepted formats: PDF, DOC, DOCX (Max size: 5MB)
+                                            </p>
+                                        </div>
+                                        {formErrors.resume && (
+                                            <p className="mt-1 text-sm text-red-600">{formErrors.resume}</p>
+                                        )}
+                                    </div>
+
+                                    {/* Submit Button */}
+                                    <div className="pt-4 flex justify-center">
+                                        <Button
+                                            type="submit"
+                                            variant="primary"
+                                            size="lg"
+                                            disabled={isSubmitting || jobData?.status !== 'active'}
+                                            className="w-full sm:w-auto"
+                                        >
+                                            {isSubmitting ? (
+                                                <>
+                                                    <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                                                    Submitting...
+                                                </>
+                                            ) : (
+                                                'Submit Application'
+                                            )}
+                                        </Button>
+                                    </div>
+                                </form>
+                            </>
+                        )}
                     </div>
                 )}
             </div>
@@ -680,6 +731,6 @@ export default function JobPage({ params }: Props) {
                     </motion.div>
                 )}
             </AnimatePresence>
-        </div>
+        </div >
     );
 }

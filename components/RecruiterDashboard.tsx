@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Briefcase, Loader2, AlertCircle, MapPin, Clock, Users, Calendar, Plus } from 'lucide-react';
+import { Briefcase, Loader2, AlertCircle, MapPin, Clock, Users, Calendar, Plus, Trash2 } from 'lucide-react';
 import { Button } from './Button';
 import { PostJobModal } from './PostJobModal';
 import { JobDetailsModal } from './JobDetailsModal';
@@ -11,6 +11,7 @@ import type { Job } from '@/types';
 
 export function RecruiterDashboard({ firstName }: { firstName?: string }) {
   const router = useRouter();
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -19,7 +20,7 @@ export function RecruiterDashboard({ firstName }: { firstName?: string }) {
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
 
 
-  useEffect (() => {
+  useEffect(() => {
     fetchJobs();
   }, []);
 
@@ -47,6 +48,32 @@ export function RecruiterDashboard({ firstName }: { firstName?: string }) {
       console.error('Error fetching jobs:', err);
       setError('Failed to load jobs');
       setIsLoading(false);
+    }
+  };
+
+  const handleDelete = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation(); // Prevent opening the modal
+    if (!confirm('Are you sure you want to delete this job posting? This action cannot be undone.')) {
+      return;
+    }
+
+    setIsDeleting(id);
+    try {
+      const response = await fetch(`/api/jobs?id=${id}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        fetchJobs(); // Refresh the list
+      } else {
+        const data = await response.json();
+        alert(data.error || 'Failed to delete job');
+      }
+    } catch (err) {
+      console.error('Error deleting job:', err);
+      alert('An unexpected error occurred');
+    } finally {
+      setIsDeleting(null);
     }
   };
 
@@ -132,17 +159,33 @@ export function RecruiterDashboard({ firstName }: { firstName?: string }) {
                 >
                   {/* Header */}
                   <div className="flex items-start justify-between mb-4">
-                    <h3 className="text-lg font-bold text-slate-900 flex-1 pr-2">
-                      {job.job_title}
-                    </h3>
-                    <span
-                      className={`px-2.5 py-1 rounded-full text-xs font-semibold flex-shrink-0 ${job.status === 'active'
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-lg font-bold text-slate-900 truncate pr-2" title={job.job_title}>
+                        {job.job_title}
+                      </h3>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`px-2.5 py-1 rounded-full text-xs font-semibold flex-shrink-0 ${job.status === 'active'
                           ? 'bg-green-100 text-green-700'
                           : 'bg-slate-100 text-slate-700'
-                        }`}
-                    >
-                      {job.status === 'active' ? 'Active' : 'Closed'}
-                    </span>
+                          }`}
+                      >
+                        {job.status === 'active' ? 'Active' : 'Closed'}
+                      </span>
+                      <button
+                        onClick={(e) => handleDelete(e, job.id)}
+                        disabled={isDeleting === job.id}
+                        className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-all disabled:opacity-50"
+                        title="Delete job posting"
+                      >
+                        {isDeleting === job.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin text-red-600" />
+                        ) : (
+                          <Trash2 className="h-4 w-4" />
+                        )}
+                      </button>
+                    </div>
                   </div>
 
                   {/* Job Details */}

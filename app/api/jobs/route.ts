@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase-server';
 export async function POST(request: Request) {
   try {
     const { userId } = await auth();
-    
+
     if (!userId) {
       return NextResponse.json(
         { error: 'Unauthorized. Please sign in to continue.' },
@@ -15,7 +15,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { job_title, company_name, job_location, employment_type, job_description } = body;
+    const { job_title, company_name, job_location, employment_type, job_description, skills, experience_level } = body;
 
     // Validate required fields
     const errors: string[] = [];
@@ -35,6 +35,16 @@ export async function POST(request: Request) {
       errors.push('Job description is required');
     }
 
+    // SRS Validation: Skills (Tags) - Minimum 3
+    const skillList = skills ? skills.split(',').map((s: string) => s.trim()).filter((s: string) => s !== '') : [];
+    if (skillList.length < 3) {
+      errors.push('At least 3 skills are required for semantic matching');
+    }
+
+    if (!experience_level || experience_level.trim() === '') {
+      errors.push('Experience level is required');
+    }
+
     if (errors.length > 0) {
       return NextResponse.json(
         { error: 'Failed to create job', details: errors },
@@ -52,6 +62,8 @@ export async function POST(request: Request) {
         job_location: job_location.trim(),
         employment_type: employment_type.trim(),
         job_description: job_description.trim(),
+        skills: skills.trim(),
+        experience_level: experience_level.trim(),
         status: 'active',
         applicants_count: 0,
       })
@@ -89,7 +101,7 @@ export async function POST(request: Request) {
 export async function GET() {
   try {
     const { userId } = await auth();
-    
+
     if (!userId) {
       return NextResponse.json(
         { error: 'Unauthorized. Please sign in to continue.' },
@@ -122,6 +134,39 @@ export async function GET() {
       { error: 'Failed to load jobs', details: ['An unexpected error occurred'] },
       { status: 500 }
     );
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const jobId = searchParams.get('id');
+
+    if (!jobId) {
+      return NextResponse.json({ error: 'Job ID is required' }, { status: 400 });
+    }
+
+    // Verify ownership and delete
+    const { error } = await supabase
+      .from('jobs')
+      .delete()
+      .eq('id', jobId)
+      .eq('recruiter_id', userId);
+
+    if (error) {
+      console.error('Supabase delete error:', error);
+      return NextResponse.json({ error: 'Failed to delete job' }, { status: 500 });
+    }
+
+    return NextResponse.json({ message: 'Job deleted successfully' });
+  } catch (error) {
+    console.error('Delete job error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 

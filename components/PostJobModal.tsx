@@ -17,6 +17,8 @@ export function PostJobModal({ isOpen, onClose, onJobposted }: PostJobModalProps
     companyName: '',
     location: '',
     employmentType: '',
+    experienceLevel: '',
+    skills: '',
     jobDescription: '',
   });
   const [isLoading, setIsLoading] = useState(false);
@@ -138,6 +140,8 @@ export function PostJobModal({ isOpen, onClose, onJobposted }: PostJobModalProps
           company_name: formData.companyName,
           job_location: formData.location,
           employment_type: formData.employmentType,
+          experience_level: formData.experienceLevel,
+          skills: formData.skills,
           job_description: formattedJobDescription,
         }),
       });
@@ -161,6 +165,8 @@ export function PostJobModal({ isOpen, onClose, onJobposted }: PostJobModalProps
         companyName: '',
         location: '',
         employmentType: '',
+        experienceLevel: '',
+        skills: '',
         jobDescription: '',
       });
       setIsLoading(false);
@@ -194,6 +200,8 @@ export function PostJobModal({ isOpen, onClose, onJobposted }: PostJobModalProps
       companyName: '',
       location: '',
       employmentType: '',
+      experienceLevel: '',
+      skills: '',
       jobDescription: '',
     });
     setCreatedJobId(null);
@@ -352,6 +360,47 @@ export function PostJobModal({ isOpen, onClose, onJobposted }: PostJobModalProps
                   <option value="contract">Contract</option>
                   <option value="temporary">Temporary</option>
                 </select>
+              </div>
+
+              {/* Experience Level */}
+              <div>
+                <label htmlFor="experienceLevel" className="block text-sm font-semibold text-slate-900 mb-2">
+                  Experience Level *
+                </label>
+                <select
+                  id="experienceLevel"
+                  name="experienceLevel"
+                  value={formData.experienceLevel}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                >
+                  <option value="">Select experience level</option>
+                  <option value="entry">Entry Level</option>
+                  <option value="mid">Mid Level</option>
+                  <option value="senior">Senior Level</option>
+                  <option value="lead">Lead/Manager</option>
+                </select>
+              </div>
+
+              {/* Skills */}
+              <div>
+                <label htmlFor="skills" className="block text-sm font-semibold text-slate-900 mb-2">
+                  Required Skills *
+                </label>
+                <input
+                  type="text"
+                  id="skills"
+                  name="skills"
+                  value={formData.skills}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  placeholder="e.g., React, TypeScript, Node.js (Min. 3)"
+                />
+                <p className="mt-1.5 text-xs text-slate-500">
+                  Separate skills with commas. At least 3 are required for AI matching.
+                </p>
               </div>
 
               {/* Job Description */}
