@@ -100,6 +100,34 @@ export default function JobPage({ params }: Props) {
     const [submitMessage, setSubmitMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
     const [activeTab, setActiveTab] = useState<'overview' | 'application'>('overview');
 
+    useEffect(() => {
+        if (userId && activeTab === 'application') {
+            fetchCandidateProfile();
+        }
+    }, [userId, activeTab]);
+
+    const fetchCandidateProfile = async () => {
+        try {
+            const res = await fetch('/api/candidate/profile');
+            if (res.ok) {
+                const data = await res.json();
+                if (data) {
+                    setFormData(prev => ({
+                        ...prev,
+                        name: data.full_name || prev.name,
+                        email: data.email || prev.email,
+                        phoneNumber: data.phone || prev.phoneNumber,
+                        address: data.address || prev.address,
+                        educationLevel: data.education_level || prev.educationLevel,
+                        yearsOfExperience: data.years_of_experience?.toString() || prev.yearsOfExperience,
+                    }));
+                }
+            }
+        } catch (e) {
+            console.error('Error fetching candidate profile for auto-fill:', e);
+        }
+    };
+
     const fetchData = async () => {
         setIsLoading(true);
         setError(null);

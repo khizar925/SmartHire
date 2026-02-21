@@ -1,7 +1,11 @@
-import { X, MapPin, Clock, Users, Calendar, Briefcase, ExternalLink } from 'lucide-react';
+'use client';
+
+import { X, MapPin, Clock, Users, Calendar, BrainCircuit, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { createPortal } from 'react-dom';
+import { useEffect, useState } from 'react';
 import type { Job } from '@/types';
 
 interface JobDetailsModalProps {
@@ -11,6 +15,20 @@ interface JobDetailsModalProps {
 }
 
 export function JobDetailsModal({ isOpen, onClose, job }: JobDetailsModalProps) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
+
   const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) {
       onClose();
@@ -32,25 +50,27 @@ export function JobDetailsModal({ isOpen, onClose, job }: JobDetailsModalProps) 
     ).join(' ');
   };
 
-  if (!isOpen || !job) return null;
+  if (!isOpen || !job || !mounted) return null;
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-[999] flex items-center justify-center p-4"
       onClick={handleBackdropClick}
     >
       {/* Backdrop */}
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" />
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" aria-hidden="true" />
 
-      {/* Modal */}
-      <div className="relative z-50 w-full max-w-4xl max-h-[90vh] bg-white rounded-xl shadow-2xl overflow-hidden flex flex-col">
+      {/* Modal Container */}
+      <div className="relative z-[1000] w-full max-w-4xl max-h-[90vh] bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col animate-in fade-in zoom-in duration-300">
         {/* Header */}
-        <div className="p-6 border-b border-slate-200 flex-shrink-0">
+        <div className="p-6 border-b border-slate-100 flex-shrink-0 bg-white">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3 flex-1">
-              <Briefcase className="h-6 w-6 text-primary-600 flex-shrink-0" />
+            <div className="flex items-center gap-4 flex-1">
+              <div className="bg-primary-600 text-white p-2.5 rounded-xl shadow-md shadow-primary-600/20">
+                <BrainCircuit className="h-6 w-6 flex-shrink-0" />
+              </div>
               <div className="flex-1 min-w-0">
-                <h2 className="text-2xl font-bold text-slate-900 truncate">{job.job_title}</h2>
+                <h2 className="text-2xl font-bold text-slate-900 truncate font-serif tracking-tight">{job.job_title}</h2>
               </div>
               <span
                 className={`px-3 py-1 rounded-full text-xs font-semibold flex-shrink-0 ${job.status === 'active'
@@ -66,7 +86,7 @@ export function JobDetailsModal({ isOpen, onClose, job }: JobDetailsModalProps) 
               className="p-2 hover:bg-slate-100 rounded-lg transition-colors ml-4"
               aria-label="Close modal"
             >
-              <X className="h-5 w-5 text-slate-600" />
+              <X className="h-5 w-5 text-slate-500" />
             </button>
           </div>
         </div>
@@ -160,7 +180,7 @@ export function JobDetailsModal({ isOpen, onClose, job }: JobDetailsModalProps) 
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 p-6 border-t border-slate-200 bg-slate-50 flex-shrink-0">
+        <div className="flex items-center justify-end gap-3 p-6 border-t border-slate-100 bg-slate-50 flex-shrink-0">
           <button
             onClick={onClose}
             className="px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-200 rounded-lg transition-colors"
@@ -169,6 +189,7 @@ export function JobDetailsModal({ isOpen, onClose, job }: JobDetailsModalProps) 
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

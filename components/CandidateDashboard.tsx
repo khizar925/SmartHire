@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Briefcase, Loader2, AlertCircle, MapPin, Clock, Users, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Briefcase, Loader2, AlertCircle, MapPin, Clock, Users, Calendar, ChevronLeft, ChevronRight, UserCircle } from 'lucide-react';
 import { Button } from './Button';
 import { formatTimeAgo, isNewJob } from '@/lib/date-utils';
 import type { Job } from '@/types';
@@ -108,7 +108,7 @@ export function CandidateDashboard({ firstName }: { firstName?: string }) {
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-slate-900">Available Jobs</h2>
           {!isLoading && !errorType && total > 0 && (
-            <span className="text-sm text-slate-600">
+            <span className="text-sm text-slate-600 hidden sm:inline">
               Showing {getStartIndex()}-{getEndIndex()} of {total} jobs
             </span>
           )}

@@ -1,8 +1,9 @@
 // components/PostJobModal.tsx
 'use client';
 
-import { useState } from 'react';
-import { X, Loader2, AlertCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { X, Loader2, AlertCircle, BrainCircuit } from 'lucide-react';
+import { createPortal } from 'react-dom';
 import { Button } from './Button';
 
 interface PostJobModalProps {
@@ -12,6 +13,7 @@ interface PostJobModalProps {
 }
 
 export function PostJobModal({ isOpen, onClose, onJobposted }: PostJobModalProps) {
+  const [mounted, setMounted] = useState(false);
   const [formData, setFormData] = useState({
     jobTitle: '',
     companyName: '',
@@ -26,7 +28,19 @@ export function PostJobModal({ isOpen, onClose, onJobposted }: PostJobModalProps
   const [errorDetails, setErrorDetails] = useState<string[]>([]);
   const [createdJobId, setCreatedJobId] = useState<string | null>(null);
   const publicLink = process.env.NEXT_PUBLIC_APP_URL || (typeof window !== 'undefined' ? window.location.origin : '');
-  const [publicLinkStatus, setPublicLinkStatus] = useState(false)
+  const [publicLinkStatus, setPublicLinkStatus] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
 
   function formatJobDescriptionToMarkdown(content: string): string {
     if (!content || typeof content !== 'string') return '';
@@ -209,27 +223,32 @@ export function PostJobModal({ isOpen, onClose, onJobposted }: PostJobModalProps
     onClose();
   }
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-[999] flex items-center justify-center p-4"
       onClick={handleBackdropClick}
     >
       {/* Backdrop */}
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" />
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" aria-hidden="true" />
 
-      {/* Modal */}
-      <div className="relative z-50 w-full max-w-2xl max-h-[90vh] bg-white rounded-xl shadow-2xl overflow-hidden">
+      {/* Modal Container */}
+      <div className="relative z-[1000] w-full max-w-2xl max-h-[90vh] bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in duration-300">
         {publicLinkStatus ? <div>
-          <div className="flex items-center justify-between p-6 border-b border-slate-200">
-            <h2 className="text-2xl font-bold text-slate-900">Public Link</h2>
+          <div className="flex items-center justify-between p-6 border-b border-slate-100 bg-white">
+            <div className="flex items-center gap-3">
+              <div className="bg-green-100 p-2 rounded-xl">
+                <BrainCircuit className="h-5 w-5 text-green-600" />
+              </div>
+              <h2 className="text-2xl font-bold text-slate-900 font-serif tracking-tight">Public Link</h2>
+            </div>
             <button
               onClick={handleOnCloseLinkModal}
               className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
               aria-label="Close modal"
             >
-              <X className="h-5 w-5 text-slate-600" />
+              <X className="h-5 w-5 text-slate-500" />
             </button>
           </div>
           <div className="p-6 space-y-4">
@@ -258,14 +277,19 @@ export function PostJobModal({ isOpen, onClose, onJobposted }: PostJobModalProps
           </div>
         </div> : <div>
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-slate-200">
-            <h2 className="text-2xl font-bold text-slate-900">Post a New Job</h2>
+          <div className="flex items-center justify-between p-6 border-b border-slate-100 bg-white">
+            <div className="flex items-center gap-3">
+              <div className="bg-primary-600/10 p-2 rounded-xl">
+                <BrainCircuit className="h-5 w-5 text-primary-600" />
+              </div>
+              <h2 className="text-2xl font-bold text-slate-900 font-serif tracking-tight">Post a New Job</h2>
+            </div>
             <button
               onClick={handleOnClosePostModal}
               className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
               aria-label="Close modal"
             >
-              <X className="h-5 w-5 text-slate-600" />
+              <X className="h-5 w-5 text-slate-500" />
             </button>
           </div>
 
@@ -422,7 +446,7 @@ export function PostJobModal({ isOpen, onClose, onJobposted }: PostJobModalProps
             </div>
 
             {/* Footer */}
-            <div className="flex items-center justify-end gap-3 p-6 border-t border-slate-200 bg-slate-50">
+            <div className="flex items-center justify-end gap-3 p-6 border-t border-slate-100 bg-slate-50">
               <Button
                 type="button"
                 variant="secondary"
@@ -447,8 +471,8 @@ export function PostJobModal({ isOpen, onClose, onJobposted }: PostJobModalProps
             </div>
           </form>
         </div>}
-
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

@@ -50,7 +50,9 @@ export default function JobResultsPage({ params }: { params: Promise<{ id: strin
     const [searchQuery, setSearchQuery] = useState('');
     const [educationFilter, setEducationFilter] = useState<string>('all');
 
-    const [sortConfigs, setSortConfigs] = useState<{ key: 'score' | 'experience', order: 'asc' | 'desc' }[]>([]);
+    const [sortConfigs, setSortConfigs] = useState<{ key: 'score' | 'experience', order: 'asc' | 'desc' }[]>(
+        [{ key: 'score', order: 'desc' }, { key: 'experience', order: 'desc' }]
+    );
 
     // Pagination State
     const [currentPage, setCurrentPage] = useState(1);
@@ -147,7 +149,7 @@ export default function JobResultsPage({ params }: { params: Promise<{ id: strin
     }, [applications]);
 
     return (
-        <div className="min-h-screen bg-slate-50 p-6 md:p-12">
+        <div className="min-h-screen bg-slate-50 p-6 md:p-3">
             <div className="max-w-7xl mx-auto">
                 {/* Header */}
                 <div className="mb-8">

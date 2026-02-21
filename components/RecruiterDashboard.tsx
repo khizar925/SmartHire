@@ -7,6 +7,7 @@ import { Briefcase, Loader2, AlertCircle, MapPin, Clock, Users, Calendar, Plus, 
 import { Button } from './Button';
 import { PostJobModal } from './PostJobModal';
 import { JobDetailsModal } from './JobDetailsModal';
+import { DeleteConfirmationModal } from './DeleteConfirmationModal';
 import type { Job } from '@/types';
 
 export function RecruiterDashboard({ firstName }: { firstName?: string }) {
@@ -18,6 +19,8 @@ export function RecruiterDashboard({ firstName }: { firstName?: string }) {
   const [error, setError] = useState<string | null>(null);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [jobToDelete, setJobToDelete] = useState<Job | null>(null);
 
 
   useEffect(() => {
@@ -51,12 +54,16 @@ export function RecruiterDashboard({ firstName }: { firstName?: string }) {
     }
   };
 
-  const handleDelete = async (e: React.MouseEvent, id: string) => {
+  const handleDelete = (e: React.MouseEvent, job: Job) => {
     e.stopPropagation(); // Prevent opening the modal
-    if (!confirm('Are you sure you want to delete this job posting? This action cannot be undone.')) {
-      return;
-    }
+    setJobToDelete(job);
+    setIsDeleteModalOpen(true);
+  };
 
+  const handleConfirmDelete = async () => {
+    if (!jobToDelete) return;
+
+    const id = jobToDelete.id;
     setIsDeleting(id);
     try {
       const response = await fetch(`/api/jobs?id=${id}`, {
@@ -64,6 +71,8 @@ export function RecruiterDashboard({ firstName }: { firstName?: string }) {
       });
 
       if (response.ok) {
+        setIsDeleteModalOpen(false);
+        setJobToDelete(null);
         fetchJobs(); // Refresh the list
       } else {
         const data = await response.json();
@@ -174,7 +183,7 @@ export function RecruiterDashboard({ firstName }: { firstName?: string }) {
                         {job.status === 'active' ? 'Active' : 'Closed'}
                       </span>
                       <button
-                        onClick={(e) => handleDelete(e, job.id)}
+                        onClick={(e) => handleDelete(e, job)}
                         disabled={isDeleting === job.id}
                         className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-all disabled:opacity-50"
                         title="Delete job posting"
@@ -244,6 +253,18 @@ export function RecruiterDashboard({ firstName }: { firstName?: string }) {
           setSelectedJob(null);
         }}
         job={selectedJob}
+      />
+
+      <DeleteConfirmationModal
+        isOpen={isDeleteModalOpen}
+        isDeleting={isDeleting !== null}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setJobToDelete(null);
+        }}
+        onConfirm={handleConfirmDelete}
+        title="Delete Job Posting"
+        message={`Are you sure you want to delete "${jobToDelete?.job_title}"? This action cannot be undone.`}
       />
     </>
   );

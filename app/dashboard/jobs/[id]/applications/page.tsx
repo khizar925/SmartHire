@@ -177,7 +177,7 @@ export default function JobApplicationsPage({ params }: { params: Promise<{ id: 
     };
 
     return (
-        <div className="min-h-screen bg-slate-50 p-6 md:p-12">
+        <div className="min-h-screen bg-slate-50 p-2 md:p-3">
             <div className="max-w-7xl mx-auto">
                 {/* Header */}
                 <div className="mb-8">
