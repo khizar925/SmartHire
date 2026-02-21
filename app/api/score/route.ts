@@ -15,7 +15,7 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Job ID is required' }, { status: 400 });
         }
 
-        const backendUrl = process.env.backend_url;
+        const backendUrl = process.env.BACKEND_URL;
         const apiKey = process.env.API_KEY;
 
         if (!backendUrl || !apiKey) {
