@@ -5,32 +5,40 @@ import { supabase } from '@/lib/supabase-server';
 // Polyfill for browser globals required by pdf-parse in Node environments
 if (typeof global.DOMMatrix === 'undefined') {
     // @ts-ignore
-    global.DOMMatrix = class DOMMatrix {
-        constructor() { }
-    };
+    global.DOMMatrix = class DOMMatrix { constructor() { } };
 }
 if (typeof global.ImageData === 'undefined') {
     // @ts-ignore
-    global.ImageData = class ImageData {
-        constructor() { }
-    };
+    global.ImageData = class ImageData { constructor() { } };
 }
 if (typeof global.Path2D === 'undefined') {
     // @ts-ignore
-    global.Path2D = class Path2D {
-        constructor() { }
-    };
+    global.Path2D = class Path2D { constructor() { } };
 }
 
-const pdf = require('pdf-parse');
-// Handle different module formats (CommonJS vs ESM)
-const getPdfParser = (mod: any) => {
-    if (typeof mod === 'function') return mod;
-    if (mod && typeof mod.default === 'function') return mod.default;
-    return mod;
-};
-const pdfParser = getPdfParser(pdf);
+const pdfMod = require('pdf-parse');
 import mammoth from 'mammoth';
+
+// Supports pdf-parse v1.x (exports a function) and v2.x (exports a class-based module)
+async function parsePdfBuffer(buffer: Buffer): Promise<string> {
+    // v1.x: the module itself is the parse function
+    if (typeof pdfMod === 'function') {
+        const data = await pdfMod(buffer);
+        return data.text;
+    }
+    // v1.x (esm interop): default export is the function
+    if (pdfMod?.default && typeof pdfMod.default === 'function') {
+        const data = await pdfMod.default(buffer);
+        return data.text;
+    }
+    // v2.x: exports a PDFParse class; buffer is passed via options.data, text via .getText()
+    if (pdfMod?.PDFParse) {
+        const parser = new pdfMod.PDFParse({ data: new Uint8Array(buffer) });
+        const result = await parser.getText();
+        return result.text;
+    }
+    throw new Error('pdf-parse: no compatible API found in the installed version');
+}
 
 async function extractTextFromFile(file: File): Promise<string> {
     const buffer = Buffer.from(await file.arrayBuffer());
@@ -38,18 +46,11 @@ async function extractTextFromFile(file: File): Promise<string> {
 
     try {
         if (fileType === 'pdf') {
-            if (typeof pdfParser !== 'function') {
-                console.error('pdfParser is not a function. Type:', typeof pdfParser, 'pdf object:', pdf);
-                throw new Error('PDF parser initialization failed');
-            }
-            const data = await pdfParser(buffer);
-            return data.text;
+            return await parsePdfBuffer(buffer);
         } else if (fileType === 'docx') {
             const result = await mammoth.extractRawText({ buffer });
             return result.value;
         } else if (fileType === 'doc') {
-            // Basic support for .doc might be limited with mammoth, 
-            // but we can try to extract what we can or advise users to use .docx
             return "Legacy .doc format detected. Automated extraction limited.";
         } else if (fileType === 'txt') {
             return buffer.toString('utf-8');
@@ -156,6 +157,54 @@ export async function POST(request: Request) {
         const { data: jobData } = await supabase.from('jobs').select('applicants_count').eq('id', jobId).single();
         await supabase.from('jobs').update({ applicants_count: (jobData?.applicants_count || 0) + 1 }).eq('id', jobId);
         */
+
+        // 4. Auto-score the resume immediately (best-effort — does not block submission on failure)
+        try {
+            const backendUrl = process.env.BACKEND_URL?.replace(/\/$/, ''); // strip trailing slash
+            const apiKey = process.env.API_KEY;
+
+            if (backendUrl && apiKey) {
+                const { data: jobScoreData } = await supabase
+                    .from('jobs')
+                    .select('job_description')
+                    .eq('id', jobId)
+                    .single();
+
+                if (jobScoreData?.job_description) {
+                    const controller = new AbortController();
+                    const scoringTimeout = setTimeout(() => controller.abort(), 30000);
+
+                    const scoreRes = await fetch(`${backendUrl}/score-single`, {
+                        method: 'POST',
+                        headers: {
+                            'X-API-Key': apiKey,
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            resume_text: resumeText ?? '',
+                            job_description: jobScoreData.job_description,
+                        }),
+                        signal: controller.signal,
+                    });
+
+                    clearTimeout(scoringTimeout);
+
+                    if (scoreRes.ok) {
+                        const { score } = await scoreRes.json();
+                        const now = new Date().toISOString();
+                        await supabase.from('scores').upsert(
+                            [{ job_id: jobId, application_id: applicationData.id, score, scored_at: now }],
+                            { onConflict: 'job_id,application_id' }
+                        );
+                    } else {
+                        console.error('Auto-scoring backend error:', await scoreRes.text());
+                    }
+                }
+            }
+        } catch (scoringError) {
+            // Non-fatal: application was saved successfully; score can be added later
+            console.error('Auto-scoring error (non-fatal):', scoringError);
+        }
 
         return NextResponse.json({ success: true, application: applicationData });
     } catch (error) {
