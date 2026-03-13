@@ -2,42 +2,12 @@ import { auth } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase-server';
 
-// Polyfill for browser globals required by pdf-parse in Node environments
-if (typeof global.DOMMatrix === 'undefined') {
-    // @ts-ignore
-    global.DOMMatrix = class DOMMatrix { constructor() { } };
-}
-if (typeof global.ImageData === 'undefined') {
-    // @ts-ignore
-    global.ImageData = class ImageData { constructor() { } };
-}
-if (typeof global.Path2D === 'undefined') {
-    // @ts-ignore
-    global.Path2D = class Path2D { constructor() { } };
-}
-
-const pdfMod = require('pdf-parse');
+const pdfParse = require('pdf-parse');
 import mammoth from 'mammoth';
 
-// Supports pdf-parse v1.x (exports a function) and v2.x (exports a class-based module)
 async function parsePdfBuffer(buffer: Buffer): Promise<string> {
-    // v1.x: the module itself is the parse function
-    if (typeof pdfMod === 'function') {
-        const data = await pdfMod(buffer);
-        return data.text;
-    }
-    // v1.x (esm interop): default export is the function
-    if (pdfMod?.default && typeof pdfMod.default === 'function') {
-        const data = await pdfMod.default(buffer);
-        return data.text;
-    }
-    // v2.x: exports a PDFParse class; buffer is passed via options.data, text via .getText()
-    if (pdfMod?.PDFParse) {
-        const parser = new pdfMod.PDFParse({ data: new Uint8Array(buffer) });
-        const result = await parser.getText();
-        return result.text;
-    }
-    throw new Error('pdf-parse: no compatible API found in the installed version');
+    const data = await pdfParse(buffer);
+    return data.text;
 }
 
 async function extractTextFromFile(file: File): Promise<string> {
