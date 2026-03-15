@@ -1,19 +1,35 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { X, FileText, Upload, Loader2, Sparkles, CheckCircle, AlertCircle } from 'lucide-react';
+import { X, FileText, Upload, Loader2, Sparkles, CheckCircle, AlertCircle, Briefcase } from 'lucide-react';
 import { Button } from './Button';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createPortal } from 'react-dom';
+
+interface Job {
+    id: string;
+    job_title: string;
+    company_name: string;
+}
 
 interface ScoreResumeModalProps {
     isOpen: boolean;
     onClose: () => void;
 }
 
+function getScoreFeedback(score: number): { heading: string; body: string } {
+    if (score >= 80) return { heading: 'Excellent Match!', body: 'Your resume is a strong fit for this role.' };
+    if (score >= 60) return { heading: 'Good Match', body: 'Your resume aligns well with this position.' };
+    if (score >= 40) return { heading: 'Moderate Match', body: 'Your resume partially matches this role. Consider tailoring it further.' };
+    return { heading: 'Low Match', body: 'Your resume may need significant updates for this role.' };
+}
+
 export function ScoreResumeModal({ isOpen, onClose }: ScoreResumeModalProps) {
     const [mounted, setMounted] = useState(false);
     const [file, setFile] = useState<File | null>(null);
+    const [selectedJobId, setSelectedJobId] = useState<string>('');
+    const [jobs, setJobs] = useState<Job[]>([]);
+    const [jobsLoading, setJobsLoading] = useState(false);
     const [isScoring, setIsScoring] = useState(false);
     const [score, setScore] = useState<number | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -23,12 +39,20 @@ export function ScoreResumeModal({ isOpen, onClose }: ScoreResumeModalProps) {
         setMounted(true);
         if (isOpen) {
             document.body.style.overflow = 'hidden';
-            // Reset state when modal opens
             setFile(null);
             setScore(null);
             setError(null);
+            setSelectedJobId('');
+            setJobsLoading(true);
+            fetch('/api/jobs/public?limit=50')
+                .then(res => res.json())
+                .then(data => setJobs(data.jobs || []))
+                .catch(() => setError('Failed to load jobs. Please try again.'))
+                .finally(() => setJobsLoading(false));
         } else {
             document.body.style.overflow = 'unset';
+            setJobs([]);
+            setSelectedJobId('');
         }
         return () => {
             document.body.style.overflow = 'unset';
@@ -38,6 +62,11 @@ export function ScoreResumeModal({ isOpen, onClose }: ScoreResumeModalProps) {
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const selectedFile = e.target.files?.[0];
         if (selectedFile) {
+            if (selectedFile.size > 5 * 1024 * 1024) {
+                setError('File exceeds 5 MB limit.');
+                setFile(null);
+                return;
+            }
             if (selectedFile.type === 'application/pdf' ||
                 selectedFile.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
                 selectedFile.type === 'text/plain') {
@@ -51,17 +80,26 @@ export function ScoreResumeModal({ isOpen, onClose }: ScoreResumeModalProps) {
     };
 
     const handleCheckScore = async () => {
-        if (!file) return;
+        if (!file || !selectedJobId) return;
 
         setIsScoring(true);
         setError(null);
 
-        // Mock scoring logic for now - in a real app, this would hit an API
         try {
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            const mockScore = Math.floor(Math.random() * 41) + 60; // Random score between 60 and 100
-            setScore(mockScore);
-        } catch (err) {
+            const formData = new FormData();
+            formData.append('resume', file);
+            formData.append('jobId', selectedJobId);
+
+            const res = await fetch('/api/score-resume', { method: 'POST', body: formData });
+            const data = await res.json();
+
+            if (!res.ok) {
+                setError(data.error || 'Failed to score resume. Please try again.');
+                return;
+            }
+
+            setScore(Math.round(data.score));
+        } catch {
             setError('Failed to score resume. Please try again.');
         } finally {
             setIsScoring(false);
@@ -69,6 +107,8 @@ export function ScoreResumeModal({ isOpen, onClose }: ScoreResumeModalProps) {
     };
 
     if (!isOpen || !mounted) return null;
+
+    const feedback = score !== null ? getScoreFeedback(score) : null;
 
     const modalContent = (
         <div className="fixed inset-0 z-[999] flex items-center justify-center p-4">
@@ -137,16 +177,47 @@ export function ScoreResumeModal({ isOpen, onClose }: ScoreResumeModalProps) {
                                 </div>
                             </div>
 
+                            {/* Job Selector */}
+                            <div className="space-y-2">
+                                <label className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+                                    <Briefcase className="h-4 w-4 text-slate-400" />
+                                    Score against which job?
+                                </label>
+                                {jobsLoading ? (
+                                    <div className="flex items-center gap-2 text-sm text-slate-400 h-11 px-4 border border-slate-200 rounded-xl bg-slate-50">
+                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                        Loading jobs...
+                                    </div>
+                                ) : jobs.length === 0 ? (
+                                    <div className="text-sm text-slate-400 h-11 px-4 border border-slate-200 rounded-xl bg-slate-50 flex items-center">
+                                        No active jobs available
+                                    </div>
+                                ) : (
+                                    <select
+                                        value={selectedJobId}
+                                        onChange={e => setSelectedJobId(e.target.value)}
+                                        className="w-full h-11 px-4 border border-slate-200 rounded-xl bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                                    >
+                                        <option value="">Select a job to score against</option>
+                                        {jobs.map(job => (
+                                            <option key={job.id} value={job.id}>
+                                                {job.job_title} — {job.company_name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                )}
+                            </div>
+
                             {error && (
                                 <div className="flex items-center gap-2 text-sm font-medium text-red-600 bg-red-50 p-3 rounded-lg border border-red-100">
-                                    <AlertCircle className="h-4 w-4" />
+                                    <AlertCircle className="h-4 w-4 shrink-0" />
                                     {error}
                                 </div>
                             )}
 
                             <Button
                                 onClick={handleCheckScore}
-                                disabled={!file || isScoring}
+                                disabled={!file || !selectedJobId || isScoring || jobsLoading}
                                 variant="primary"
                                 className="w-full h-12 text-base font-bold shadow-lg shadow-primary-600/20"
                             >
@@ -200,14 +271,14 @@ export function ScoreResumeModal({ isOpen, onClose }: ScoreResumeModalProps) {
                                     <CheckCircle className="h-4 w-4" />
                                     AI Score Assigned
                                 </div>
-                                <h3 className="text-2xl font-bold text-slate-900 font-serif">Impressive Work!</h3>
+                                <h3 className="text-2xl font-bold text-slate-900 font-serif">{feedback!.heading}</h3>
                                 <p className="text-slate-500 max-w-xs mx-auto">
-                                    Your resume has a strong match with high-performing candidate profiles in our database.
+                                    {feedback!.body}
                                 </p>
                             </div>
 
                             <Button
-                                onClick={() => setScore(null)}
+                                onClick={() => { setScore(null); setFile(null); setSelectedJobId(''); }}
                                 variant="secondary"
                                 className="mt-8 w-full font-bold"
                             >
