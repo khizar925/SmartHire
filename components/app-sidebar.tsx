@@ -3,10 +3,10 @@
 import * as React from 'react';
 import {
     LayoutDashboard,
-    Settings,
     BrainCircuit,
     User,
     Sparkles,
+    ClipboardList,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -46,6 +46,7 @@ export function AppSidebar({ role, onOpenProfile, onOpenScore, ...props }: AppSi
     // Removed candidateLinks and recruiterLinks, replaced with dynamic links
     const links: NavLink[] = [
         { label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
+        ...(role === 'candidate' ? [{ label: 'My Applications', icon: ClipboardList, href: '/dashboard/applications' } as NavLink] : []),
         {
             label: 'Score Resume',
             icon: Sparkles,
