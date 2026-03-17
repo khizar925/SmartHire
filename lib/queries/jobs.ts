@@ -1,0 +1,48 @@
+import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData } from '@tanstack/react-query';
+import { apiFetch } from '@/lib/fetch';
+import { queryKeys } from '@/lib/query-keys';
+import type { Job } from '@/types';
+
+interface PaginatedJobsResponse {
+  jobs: Job[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+  hasMore: boolean;
+}
+
+type JobData = {
+  id: string;
+  recruiter_id: string;
+  job_title: string;
+  job_location: string;
+  employment_type: string;
+  job_description: string;
+  status: string;
+  company_name: string;
+};
+
+export function useRecruiterJobs() {
+  return useQuery({
+    queryKey: queryKeys.jobs(),
+    queryFn: () => apiFetch<{ jobs: Job[] }>('/api/jobs').then(d => d.jobs),
+  });
+}
+
+export function usePublicJobs(page: number) {
+  return useQuery({
+    queryKey: queryKeys.publicJobs(page),
+    queryFn: () => apiFetch<PaginatedJobsResponse>(`/api/jobs/public?page=${page}&limit=12`),
+    placeholderData: keepPreviousData,
+  });
+}
+
+export function usePublicJob(id: string) {
+  return useQuery({
+    queryKey: queryKeys.publicJob(id),
+    queryFn: () => apiFetch<JobData>(`/api/jobs/public/${id}`),
+    enabled: !!id,
+  });
+}

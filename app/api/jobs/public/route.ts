@@ -1,3 +1,5 @@
+export const revalidate = 300; // 5 min server-side cache — safe because this route is unauthenticated
+
 import { auth } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase-server';

@@ -1,101 +1,50 @@
 // components/RecruiterDashboard.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { Briefcase, Loader2, AlertCircle, MapPin, Clock, Users, Calendar, Plus, Trash2 } from 'lucide-react';
 import { Button } from './Button';
 import { PostJobModal } from './PostJobModal';
 import { JobDetailsModal } from './JobDetailsModal';
 import { DeleteConfirmationModal } from './DeleteConfirmationModal';
+import { useRecruiterJobs } from '@/lib/queries/jobs';
+import { useDeleteJob } from '@/lib/mutations/jobs';
 import type { Job } from '@/types';
 
-export function RecruiterDashboard({ firstName }: { firstName?: string }) {
-  const router = useRouter();
-  const [isDeleting, setIsDeleting] = useState<string | null>(null);
+export function RecruiterDashboard(_props: { firstName?: string }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [jobs, setJobs] = useState<Job[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [jobToDelete, setJobToDelete] = useState<Job | null>(null);
 
-
-  useEffect(() => {
-    fetchJobs();
-  }, []);
-
-  const handleJobPosted = () => {
-    fetchJobs();
-  };
-
-  const fetchJobs = async () => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const response = await fetch('/api/jobs');
-      const data = await response.json();
-
-      if (!response.ok) {
-        setError(data.error || 'Failed to load jobs');
-        setIsLoading(false);
-        return;
-      }
-
-      setJobs(data.jobs || []);
-      setIsLoading(false);
-    } catch (err) {
-      console.error('Error fetching jobs:', err);
-      setError('Failed to load jobs');
-      setIsLoading(false);
-    }
-  };
+  const { data: jobs = [], isLoading, error, refetch } = useRecruiterJobs();
+  const deleteJob = useDeleteJob();
 
   const handleDelete = (e: React.MouseEvent, job: Job) => {
-    e.stopPropagation(); // Prevent opening the modal
+    e.stopPropagation();
     setJobToDelete(job);
     setIsDeleteModalOpen(true);
   };
 
   const handleConfirmDelete = async () => {
     if (!jobToDelete) return;
-
-    const id = jobToDelete.id;
-    setIsDeleting(id);
     try {
-      const response = await fetch(`/api/jobs?id=${id}`, {
-        method: 'DELETE',
-      });
-
-      if (response.ok) {
-        setIsDeleteModalOpen(false);
-        setJobToDelete(null);
-        fetchJobs(); // Refresh the list
-      } else {
-        const data = await response.json();
-        alert(data.error || 'Failed to delete job');
-      }
-    } catch (err) {
-      console.error('Error deleting job:', err);
-      alert('An unexpected error occurred');
-    } finally {
-      setIsDeleting(null);
+      await deleteJob.mutateAsync(jobToDelete.id);
+      setIsDeleteModalOpen(false);
+      setJobToDelete(null);
+    } catch {
+      alert('Failed to delete job');
     }
   };
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric', month: 'short', day: 'numeric',
     });
   };
 
-  const truncateDescription = (text: string, maxLength: number = 150) => {
+  const truncateDescription = (text: string, maxLength = 150) => {
     if (text.length <= maxLength) return text;
     return text.substring(0, maxLength).trim() + '...';
   };
@@ -103,39 +52,30 @@ export function RecruiterDashboard({ firstName }: { firstName?: string }) {
   return (
     <>
       <div className="space-y-6">
-        {/* Job Posting Section */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 md:p-8">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-slate-900">Job Postings</h2>
             {jobs.length > 0 && (
-              <Button
-                variant="primary"
-                onClick={() => setIsModalOpen(true)}
-              >
+              <Button variant="primary" onClick={() => setIsModalOpen(true)}>
                 <Plus className="h-4 w-4 mr-2" />
                 Post New Job
               </Button>
             )}
           </div>
 
-          {/* Loading State */}
           {isLoading && (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-8 w-8 animate-spin text-primary-600" />
             </div>
           )}
 
-          {/* Error State */}
           {error && !isLoading && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4">
               <div className="flex items-start gap-3">
                 <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
                 <div className="flex-1">
-                  <p className="text-sm font-semibold text-red-900">{error}</p>
-                  <button
-                    onClick={fetchJobs}
-                    className="mt-2 text-sm text-red-700 hover:text-red-900 underline"
-                  >
+                  <p className="text-sm font-semibold text-red-900">Failed to load jobs</p>
+                  <button onClick={() => refetch()} className="mt-2 text-sm text-red-700 hover:text-red-900 underline">
                     Try again
                   </button>
                 </div>
@@ -143,30 +83,24 @@ export function RecruiterDashboard({ firstName }: { firstName?: string }) {
             </div>
           )}
 
-          {/* Empty State */}
           {!isLoading && !error && jobs.length === 0 && (
             <div className="text-center py-12">
               <Briefcase className="h-12 w-12 text-slate-400 mx-auto mb-4" />
               <h3 className="text-lg font-semibold text-slate-900 mb-2">No jobs posted yet</h3>
               <p className="text-slate-600 mb-4">Get started by posting your first job opening.</p>
-              <Button
-                variant="primary"
-                onClick={() => setIsModalOpen(true)}
-              >
+              <Button variant="primary" onClick={() => setIsModalOpen(true)}>
                 Post Your First Job
               </Button>
             </div>
           )}
 
-          {/* Jobs Grid */}
           {!isLoading && !error && jobs.length > 0 && (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {jobs.map((job) => (
+              {jobs.map((job: Job) => (
                 <div
                   key={job.id}
                   className="border border-slate-200 rounded-lg p-6 hover:shadow-md transition-shadow flex flex-col"
                 >
-                  {/* Header */}
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1 min-w-0">
                       <h3 className="text-lg font-bold text-slate-900 truncate pr-2" title={job.job_title}>
@@ -174,21 +108,16 @@ export function RecruiterDashboard({ firstName }: { firstName?: string }) {
                       </h3>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span
-                        className={`px-2.5 py-1 rounded-full text-xs font-semibold flex-shrink-0 ${job.status === 'active'
-                          ? 'bg-green-100 text-green-700'
-                          : 'bg-slate-100 text-slate-700'
-                          }`}
-                      >
+                      <span className={`px-2.5 py-1 rounded-full text-xs font-semibold flex-shrink-0 ${job.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-700'}`}>
                         {job.status === 'active' ? 'Active' : 'Closed'}
                       </span>
                       <button
                         onClick={(e) => handleDelete(e, job)}
-                        disabled={isDeleting === job.id}
+                        disabled={deleteJob.isPending && jobToDelete?.id === job.id}
                         className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-all disabled:opacity-50"
                         title="Delete job posting"
                       >
-                        {isDeleting === job.id ? (
+                        {deleteJob.isPending && jobToDelete?.id === job.id ? (
                           <Loader2 className="h-4 w-4 animate-spin text-red-600" />
                         ) : (
                           <Trash2 className="h-4 w-4" />
@@ -197,7 +126,6 @@ export function RecruiterDashboard({ firstName }: { firstName?: string }) {
                     </div>
                   </div>
 
-                  {/* Job Details */}
                   <div className="space-y-3 mb-4">
                     <div className="flex items-center gap-2 text-sm text-slate-600">
                       <MapPin className="h-4 w-4 flex-shrink-0" />
@@ -217,19 +145,14 @@ export function RecruiterDashboard({ firstName }: { firstName?: string }) {
                     </div>
                   </div>
 
-                  {/* Description Preview */}
                   <p className="text-sm text-slate-600 line-clamp-3 mb-4">
                     {truncateDescription(job.job_description)}
                   </p>
 
-                  {/* View Details Button */}
                   <Button
                     variant="primary"
                     className="w-full mt-auto"
-                    onClick={() => {
-                      setSelectedJob(job);
-                      setIsDetailsModalOpen(true);
-                    }}
+                    onClick={() => { setSelectedJob(job); setIsDetailsModalOpen(true); }}
                   >
                     View Details
                   </Button>
@@ -243,25 +166,19 @@ export function RecruiterDashboard({ firstName }: { firstName?: string }) {
       <PostJobModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        onJobposted={handleJobPosted} // Pass the callback
+        onJobposted={() => {}} // invalidation handled by mutation
       />
 
       <JobDetailsModal
         isOpen={isDetailsModalOpen}
-        onClose={() => {
-          setIsDetailsModalOpen(false);
-          setSelectedJob(null);
-        }}
+        onClose={() => { setIsDetailsModalOpen(false); setSelectedJob(null); }}
         job={selectedJob}
       />
 
       <DeleteConfirmationModal
         isOpen={isDeleteModalOpen}
-        isDeleting={isDeleting !== null}
-        onClose={() => {
-          setIsDeleteModalOpen(false);
-          setJobToDelete(null);
-        }}
+        isDeleting={deleteJob.isPending}
+        onClose={() => { setIsDeleteModalOpen(false); setJobToDelete(null); }}
         onConfirm={handleConfirmDelete}
         title="Delete Job Posting"
         message={`Are you sure you want to delete "${jobToDelete?.job_title}"? This action cannot be undone.`}
@@ -269,4 +186,3 @@ export function RecruiterDashboard({ firstName }: { firstName?: string }) {
     </>
   );
 }
-
