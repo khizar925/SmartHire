@@ -1,6 +1,7 @@
 import { auth } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase-server';
+import { sendStatusEmail } from '@/lib/email';
 
 const pdfParse = require('pdf-parse');
 import mammoth from 'mammoth';
@@ -214,6 +215,17 @@ export async function GET(request: Request) {
             return NextResponse.json({ hasApplied: !!data, application: data });
         }
 
+        // Verify the authenticated user owns this job before returning applications
+        const { data: jobData, error: jobError } = await supabase
+            .from('jobs')
+            .select('recruiter_id')
+            .eq('id', jobId)
+            .single();
+
+        if (jobError || !jobData || jobData.recruiter_id !== userId) {
+            return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+        }
+
         // Fetch applications for this job (Recruiter view)
         const { data, error } = await supabase
             .from('applications')
@@ -249,7 +261,7 @@ export async function PATCH(request: Request) {
         // 1. Verify that the current user is the recruiter for the job this application belongs to
         const { data: appData, error: appError } = await supabase
             .from('applications')
-            .select('job_id, jobs(recruiter_id)')
+            .select('job_id, full_name, email, jobs(recruiter_id, job_title, company_name)')
             .eq('id', applicationId)
             .single();
 
@@ -278,6 +290,26 @@ export async function PATCH(request: Request) {
         if (error) {
             console.error('Update error:', error);
             return NextResponse.json({ error: 'Failed to update application' }, { status: 500 });
+        }
+
+        // Send email notification to candidate on status change
+        const notifyStatuses = ['accepted', 'rejected', 'shortlisted'];
+        if (notifyStatuses.includes(status)) {
+            try {
+                await sendStatusEmail({
+                    to: appData.email,
+                    candidateName: appData.full_name,
+                    // @ts-ignore - nested join type
+                    jobTitle: appData.jobs.job_title,
+                    // @ts-ignore - nested join type
+                    companyName: appData.jobs.company_name,
+                    status,
+                    feedback: feedback ?? undefined,
+                });
+            } catch (emailError) {
+                console.error('Failed to send status email:', emailError);
+                // Non-fatal: status update succeeded, email failure should not block response
+            }
         }
 
         return NextResponse.json({ success: true, application: data });

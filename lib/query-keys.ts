@@ -6,4 +6,6 @@ export const queryKeys = {
   applicationCheck: (jobId: string) => ['application', 'check', jobId] as const,
   candidateProfile: () => ['candidate', 'profile'] as const,
   candidateApplications: () => ['candidate', 'applications'] as const,
+  recruiterAnalytics:    () => ['analytics', 'recruiter'] as const,
+  candidateAnalytics:    () => ['analytics', 'candidate'] as const,
 };

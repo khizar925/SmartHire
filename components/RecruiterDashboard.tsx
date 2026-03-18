@@ -3,6 +3,7 @@
 
 import { useState } from 'react';
 import { Briefcase, Loader2, AlertCircle, MapPin, Clock, Users, Calendar, Plus, Trash2 } from 'lucide-react';
+import { RecruiterAnalytics } from './RecruiterAnalytics';
 import { Button } from './Button';
 import { PostJobModal } from './PostJobModal';
 import { JobDetailsModal } from './JobDetailsModal';
@@ -49,18 +50,31 @@ export function RecruiterDashboard(_props: { firstName?: string }) {
     return text.substring(0, maxLength).trim() + '...';
   };
 
+  const isJobActive = (job: Job) => {
+    if (job.status !== 'active') return false;
+    const ageInDays = (Date.now() - new Date(job.created_at).getTime()) / 86_400_000;
+    return ageInDays <= 30;
+  };
+
   return (
     <>
       <div className="space-y-6">
+        {/* Top action bar */}
+        <div className="flex items-center justify-between">
+          <div />
+          <Button variant="primary" onClick={() => setIsModalOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Post New Job
+          </Button>
+        </div>
+
+        {/* Analytics section — always visible */}
+        <RecruiterAnalytics />
+
+        {/* Job Postings section */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 md:p-8">
-          <div className="flex items-center justify-between mb-6">
+          <div className="mb-6">
             <h2 className="text-2xl font-bold text-slate-900">Job Postings</h2>
-            {jobs.length > 0 && (
-              <Button variant="primary" onClick={() => setIsModalOpen(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Post New Job
-              </Button>
-            )}
           </div>
 
           {isLoading && (
@@ -108,9 +122,11 @@ export function RecruiterDashboard(_props: { firstName?: string }) {
                       </h3>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className={`px-2.5 py-1 rounded-full text-xs font-semibold flex-shrink-0 ${job.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-700'}`}>
-                        {job.status === 'active' ? 'Active' : 'Closed'}
-                      </span>
+                      {isJobActive(job) && (
+                        <span className="px-2.5 py-1 rounded-full text-xs font-semibold flex-shrink-0 bg-green-100 text-green-700">
+                          New
+                        </span>
+                      )}
                       <button
                         onClick={(e) => handleDelete(e, job)}
                         disabled={deleteJob.isPending && jobToDelete?.id === job.id}

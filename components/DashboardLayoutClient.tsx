@@ -1,7 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { UserButton } from '@clerk/nextjs';
+import dynamic from 'next/dynamic';
+
+const UserButton = dynamic(
+    () => import('@clerk/nextjs').then((mod) => ({ default: mod.UserButton })),
+    { ssr: false }
+);
 import { AppSidebar } from '@/components/app-sidebar';
 import { CandidateProfileModal } from '@/components/CandidateProfileModal';
 import { ScoreResumeModal } from '@/components/ScoreResumeModal';
