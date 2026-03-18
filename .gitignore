@@ -34,3 +34,5 @@ SRS.md
 SRS_TODO.md
 features.md
 .claude
+# clerk configuration (can include secrets)
+/.clerk/
