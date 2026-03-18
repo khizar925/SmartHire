@@ -29,6 +29,7 @@ export default function JobApplicationsPage({ params }: { params: Promise<{ id: 
     // Filter / sort
     const [searchQuery,     setSearchQuery]     = useState('');
     const [educationFilter, setEducationFilter] = useState<string>('all');
+    const [statusFilter,    setStatusFilter]    = useState<string>('all');
     const [sortConfigs, setSortConfigs] = useState<{ key: 'score' | 'experience'; order: 'asc' | 'desc' }[]>(
         [{ key: 'score', order: 'desc' }]
     );
@@ -91,7 +92,8 @@ export default function JobApplicationsPage({ params }: { params: Promise<{ id: 
             const matchSearch = app.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 app.email.toLowerCase().includes(searchQuery.toLowerCase());
             const matchEdu = educationFilter === 'all' || app.education_level.toLowerCase() === educationFilter.toLowerCase();
-            return matchSearch && matchEdu;
+            const matchStatus = statusFilter === 'all' || app.status === statusFilter;
+            return matchSearch && matchEdu && matchStatus;
         });
 
         if (sortConfigs.length > 0) {
@@ -111,7 +113,7 @@ export default function JobApplicationsPage({ params }: { params: Promise<{ id: 
             });
         }
         return result;
-    }, [applications, searchQuery, educationFilter, sortConfigs]);
+    }, [applications, searchQuery, educationFilter, statusFilter, sortConfigs]);
 
     const paginated   = useMemo(() => filteredAndSorted.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage), [filteredAndSorted, currentPage]);
     const totalPages  = Math.ceil(filteredAndSorted.length / itemsPerPage);
@@ -154,7 +156,7 @@ export default function JobApplicationsPage({ params }: { params: Promise<{ id: 
 
                 {/* Filters */}
                 {!isLoading && !error && applications.length > 0 && (
-                    <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm mb-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                         <div className="relative">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                             <input type="text" placeholder="Search by name or email..." value={searchQuery}
@@ -167,6 +169,18 @@ export default function JobApplicationsPage({ params }: { params: Promise<{ id: 
                                 className="flex-1 bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 transition-all appearance-none">
                                 <option value="all">All Education Levels</option>
                                 {uniqueEducationLevels.map(l => <option key={l} value={l}>{l}</option>)}
+                            </select>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <CheckCircle className="h-4 w-4 text-slate-400 flex-shrink-0" />
+                            <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setCurrentPage(1); }}
+                                className="flex-1 bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 transition-all appearance-none">
+                                <option value="all">All Statuses</option>
+                                <option value="pending">Pending</option>
+                                <option value="review">Under Review</option>
+                                <option value="shortlisted">Shortlisted</option>
+                                <option value="rejected">Rejected</option>
+                                <option value="hired">Hired</option>
                             </select>
                         </div>
                         <div className="flex items-center gap-2">

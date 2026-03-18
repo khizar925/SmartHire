@@ -1,14 +1,10 @@
 export const revalidate = 300; // 5 min server-side cache — safe because this route is unauthenticated
 
-import { auth } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase-server';
 
 export async function GET(request: Request) {
   try {
-    // Optional authentication - doesn't require auth but uses it if available
-    const { userId } = await auth();
-
     // Parse query parameters
     const { searchParams } = new URL(request.url);
     const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
