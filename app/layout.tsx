@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { ClerkProvider } from '@clerk/nextjs';
+import { Analytics } from '@vercel/analytics/next';
 import Providers from '@/components/Providers';
 import './globals.css';
 
@@ -18,6 +19,7 @@ export default function RootLayout({
       <html lang="en" className="scroll-smooth">
         <body className="bg-white text-slate-900 overflow-x-hidden selection:bg-primary-100 selection:text-primary-900">
           <Providers>{children}</Providers>
+          <Analytics />
         </body>
       </html>
     </ClerkProvider>
