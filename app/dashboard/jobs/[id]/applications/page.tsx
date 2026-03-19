@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import {
     ArrowLeft, Users, GraduationCap,
     Award, FileText, Loader2, AlertCircle,
-    User, CheckCircle, XCircle, Search, Filter, ArrowUpDown, Briefcase
+    User, CheckCircle, XCircle, Search, Filter, ArrowUpDown, Briefcase, RefreshCw
 } from 'lucide-react';
 import { Button } from '@/components/Button';
 import {
@@ -19,6 +19,30 @@ import { useUpdateApplicationStatus } from '@/lib/mutations/applications';
 export default function JobApplicationsPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
     const router = useRouter();
+
+    // Retry score
+    const [retryingId, setRetryingId] = useState<string | null>(null);
+
+    const handleRetryScore = async (applicationId: string) => {
+        setRetryingId(applicationId);
+        try {
+            const res = await fetch('/api/application/retry-score', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ applicationId }),
+            });
+            if (res.ok) {
+                await refetch();
+            } else {
+                const data = await res.json();
+                alert(data.error || 'Scoring failed. Please try again.');
+            }
+        } catch {
+            alert('Scoring service is unavailable. Please try again later.');
+        } finally {
+            setRetryingId(null);
+        }
+    };
 
     // Rejection modal
     const [isRejectionModalOpen, setIsRejectionModalOpen] = useState(false);
@@ -101,8 +125,10 @@ export default function JobApplicationsPage({ params }: { params: Promise<{ id: 
                 for (const cfg of sortConfigs) {
                     let cmp = 0;
                     if (cfg.key === 'score') {
-                        const sa = a.scores?.[0]?.score ?? -1;
-                        const sb = b.scores?.[0]?.score ?? -1;
+                        const rawA = a.scores?.[0]?.score;
+                        const rawB = b.scores?.[0]?.score;
+                        const sa = (!rawA || rawA === -1) ? -1 : rawA;
+                        const sb = (!rawB || rawB === -1) ? -1 : rawB;
                         cmp = sa - sb;
                     } else {
                         cmp = a.years_of_experience - b.years_of_experience;
@@ -240,8 +266,10 @@ export default function JobApplicationsPage({ params }: { params: Promise<{ id: 
                                         {paginated.map((app: Application, pageIdx) => {
                                             const globalIdx = (currentPage - 1) * itemsPerPage + pageIdx;
                                             const score = app.scores?.[0]?.score;
-                                            const hasScore = score !== undefined && score !== null;
+                                            const isPending = score === -1;
+                                            const hasScore = score !== undefined && score !== null && !isPending;
                                             const isUpdating = updateStatus.isPending && updateStatus.variables?.applicationId === app.id;
+                                            const isRetrying = retryingId === app.id;
 
                                             return (
                                                 <tr key={app.id} className="hover:bg-slate-50/50 transition-colors">
@@ -275,6 +303,23 @@ export default function JobApplicationsPage({ params }: { params: Promise<{ id: 
                                                                 <div className="w-20 h-1.5 bg-slate-100 rounded-full overflow-hidden">
                                                                     <div className="h-full bg-indigo-500 transition-all duration-700" style={{ width: `${score}%` }} />
                                                                 </div>
+                                                            </div>
+                                                        ) : isPending ? (
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="px-2 py-1 rounded-lg text-[10px] font-bold bg-amber-50 text-amber-600 border border-amber-200 uppercase tracking-wider">
+                                                                    Pending
+                                                                </span>
+                                                                <button
+                                                                    onClick={() => handleRetryScore(app.id)}
+                                                                    disabled={isRetrying}
+                                                                    title="Retry scoring"
+                                                                    className="p-1.5 bg-slate-100 text-slate-500 rounded-lg hover:bg-amber-50 hover:text-amber-600 transition-colors disabled:opacity-50"
+                                                                >
+                                                                    {isRetrying
+                                                                        ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                                                        : <RefreshCw className="h-3.5 w-3.5" />
+                                                                    }
+                                                                </button>
                                                             </div>
                                                         ) : (
                                                             <span className="text-slate-300 text-xs italic">Not Ranked</span>

@@ -225,8 +225,17 @@ export async function POST(request: Request) {
                 }
             }
         } catch (scoringError) {
-            // Non-fatal: application was saved successfully; score can be added later
+            // Non-fatal: insert sentinel score of -1 so recruiter sees "Pending" with a retry button
             console.error('Auto-scoring error (non-fatal):', scoringError);
+            try {
+                const now = new Date().toISOString();
+                await supabase.from('scores').upsert(
+                    [{ job_id: jobId, application_id: applicationData.id, score: -1, scored_at: now }],
+                    { onConflict: 'job_id,application_id' }
+                );
+            } catch (sentinelError) {
+                console.error('Failed to insert pending sentinel score:', sentinelError);
+            }
         }
 
         return NextResponse.json({ success: true, application: applicationData });
