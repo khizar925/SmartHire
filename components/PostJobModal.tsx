@@ -31,6 +31,7 @@ export function PostJobModal({ isOpen, onClose, onJobposted }: PostJobModalProps
   const [createdJobId, setCreatedJobId] = useState<string | null>(null);
   const publicLink = process.env.NEXT_PUBLIC_APP_URL || (typeof window !== 'undefined' ? window.location.origin : '');
   const [publicLinkStatus, setPublicLinkStatus] = useState(false);
+  const [copied, setCopied] = useState(false);
   const qc = useQueryClient();
 
   useEffect(() => {
@@ -184,9 +185,10 @@ export function PostJobModal({ isOpen, onClose, onJobposted }: PostJobModalProps
         resetForm();
         onClose();
       } else {
-        // Active: show the public link screen
-        setCreatedJobId(data.job?.id || null);
+        // Active: reset form first, then set ID so resetForm doesn't wipe it
+        const newJobId = data.job?.id || null;
         resetForm();
+        setCreatedJobId(newJobId);
         setPublicLinkStatus(true);
       }
     } catch (err) {
@@ -219,6 +221,7 @@ export function PostJobModal({ isOpen, onClose, onJobposted }: PostJobModalProps
   const handleOnCloseLinkModal = () => {
     setPublicLinkStatus(false);
     setCreatedJobId(null);
+    setCopied(false);
     onClose();
   }
 
@@ -272,9 +275,11 @@ export function PostJobModal({ isOpen, onClose, onJobposted }: PostJobModalProps
                   variant="primary"
                   onClick={() => {
                     navigator.clipboard.writeText(jobLink || publicLink || '');
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2000);
                   }}
                 >
-                  Copy
+                  {copied ? 'Copied!' : 'Copy'}
                 </Button>
               </div>
             </div>

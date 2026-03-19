@@ -22,9 +22,11 @@ export default function JobApplicationsPage({ params }: { params: Promise<{ id: 
 
     // Retry score
     const [retryingId, setRetryingId] = useState<string | null>(null);
+    const [retryError, setRetryError] = useState<{ id: string; message: string } | null>(null);
 
     const handleRetryScore = async (applicationId: string) => {
         setRetryingId(applicationId);
+        setRetryError(null);
         try {
             const res = await fetch('/api/application/retry-score', {
                 method: 'POST',
@@ -35,10 +37,10 @@ export default function JobApplicationsPage({ params }: { params: Promise<{ id: 
                 await refetch();
             } else {
                 const data = await res.json();
-                alert(data.error || 'Scoring failed. Please try again.');
+                setRetryError({ id: applicationId, message: data.error || 'Scoring failed. Try again.' });
             }
         } catch {
-            alert('Scoring service is unavailable. Please try again later.');
+            setRetryError({ id: applicationId, message: 'Scoring service unavailable. Try again later.' });
         } finally {
             setRetryingId(null);
         }
@@ -305,21 +307,28 @@ export default function JobApplicationsPage({ params }: { params: Promise<{ id: 
                                                                 </div>
                                                             </div>
                                                         ) : isPending ? (
-                                                            <div className="flex items-center gap-2">
-                                                                <span className="px-2 py-1 rounded-lg text-[10px] font-bold bg-amber-50 text-amber-600 border border-amber-200 uppercase tracking-wider">
-                                                                    Pending
-                                                                </span>
-                                                                <button
-                                                                    onClick={() => handleRetryScore(app.id)}
-                                                                    disabled={isRetrying}
-                                                                    title="Retry scoring"
-                                                                    className="p-1.5 bg-slate-100 text-slate-500 rounded-lg hover:bg-amber-50 hover:text-amber-600 transition-colors disabled:opacity-50"
-                                                                >
-                                                                    {isRetrying
-                                                                        ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                                                        : <RefreshCw className="h-3.5 w-3.5" />
-                                                                    }
-                                                                </button>
+                                                            <div className="flex flex-col gap-1">
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className="px-2 py-1 rounded-lg text-[10px] font-bold bg-amber-50 text-amber-600 border border-amber-200 uppercase tracking-wider">
+                                                                        Pending
+                                                                    </span>
+                                                                    <button
+                                                                        onClick={() => handleRetryScore(app.id)}
+                                                                        disabled={isRetrying}
+                                                                        title="Retry scoring"
+                                                                        className="p-1.5 bg-slate-100 text-slate-500 rounded-lg hover:bg-amber-50 hover:text-amber-600 transition-colors disabled:opacity-50"
+                                                                    >
+                                                                        {isRetrying
+                                                                            ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                                                            : <RefreshCw className="h-3.5 w-3.5" />
+                                                                        }
+                                                                    </button>
+                                                                </div>
+                                                                {retryError?.id === app.id && (
+                                                                    <p className="text-[10px] text-red-500 max-w-[140px] leading-tight">
+                                                                        {retryError.message}
+                                                                    </p>
+                                                                )}
                                                             </div>
                                                         ) : (
                                                             <span className="text-slate-300 text-xs italic">Not Ranked</span>
