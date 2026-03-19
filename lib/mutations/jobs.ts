@@ -10,10 +10,35 @@ interface CreateJobPayload {
   jobDescription: string;
 }
 
+interface UpdateJobPayload {
+  id: string;
+  job_title: string;
+  company_name: string;
+  job_location: string;
+  employment_type: string;
+  job_description: string;
+  skills: string;
+  experience_level: string;
+  status?: string;
+}
+
 export function useDeleteJob() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => apiFetch(`/api/jobs?id=${id}`, { method: 'DELETE' }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.jobs() }),
+  });
+}
+
+export function useUpdateJob() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...body }: UpdateJobPayload) =>
+      apiFetch(`/api/jobs?id=${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      }),
     onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.jobs() }),
   });
 }

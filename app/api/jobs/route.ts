@@ -137,6 +137,66 @@ export async function GET() {
   }
 }
 
+export async function PATCH(request: Request) {
+  try {
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const jobId = searchParams.get('id');
+    if (!jobId) {
+      return NextResponse.json({ error: 'Job ID is required' }, { status: 400 });
+    }
+
+    const body = await request.json();
+    const { job_title, company_name, job_location, employment_type, job_description, skills, experience_level, status } = body;
+
+    const errors: string[] = [];
+    if (!job_title?.trim())        errors.push('Job title is required');
+    if (!company_name?.trim())     errors.push('Company name is required');
+    if (!job_location?.trim())     errors.push('Job location is required');
+    if (!employment_type?.trim())  errors.push('Employment type is required');
+    if (!job_description?.trim())  errors.push('Job description is required');
+    if (!experience_level?.trim()) errors.push('Experience level is required');
+
+    const skillList = skills ? skills.split(',').map((s: string) => s.trim()).filter((s: string) => s !== '') : [];
+    if (skillList.length < 3) errors.push('At least 3 skills are required');
+
+    if (errors.length > 0) {
+      return NextResponse.json({ error: 'Validation failed', details: errors }, { status: 400 });
+    }
+
+    const { data, error } = await supabase
+      .from('jobs')
+      .update({
+        job_title: job_title.trim(),
+        company_name: company_name.trim(),
+        job_location: job_location.trim(),
+        employment_type: employment_type.trim(),
+        job_description: job_description.trim(),
+        skills: skills.trim(),
+        experience_level: experience_level.trim(),
+        ...(status ? { status } : {}),
+      })
+      .eq('id', jobId)
+      .eq('recruiter_id', userId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Supabase error updating job:', error);
+      return NextResponse.json({ error: 'Failed to update job' }, { status: 500 });
+    }
+
+    return NextResponse.json({ job: data, message: 'Job updated successfully' });
+  } catch (error) {
+    console.error('Error updating job:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
 export async function DELETE(request: Request) {
   try {
     const { userId } = await auth();

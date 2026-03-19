@@ -28,6 +28,8 @@ export interface Job {
   job_location: string;
   employment_type: string;
   job_description: string;
+  skills: string;
+  experience_level: string;
   status: 'active' | 'closed';
   applicants_count: number;
   created_at: string;

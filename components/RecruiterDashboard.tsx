@@ -2,10 +2,11 @@
 'use client';
 
 import { useState } from 'react';
-import { Briefcase, Loader2, AlertCircle, MapPin, Clock, Users, Calendar, Plus, Trash2 } from 'lucide-react';
+import { Briefcase, Loader2, AlertCircle, MapPin, Clock, Users, Calendar, Plus, Trash2, Pencil } from 'lucide-react';
 import { RecruiterAnalytics } from './RecruiterAnalytics';
 import { Button } from './Button';
 import { PostJobModal } from './PostJobModal';
+import { EditJobModal } from './EditJobModal';
 import { JobDetailsModal } from './JobDetailsModal';
 import { DeleteConfirmationModal } from './DeleteConfirmationModal';
 import { useRecruiterJobs } from '@/lib/queries/jobs';
@@ -18,9 +19,17 @@ export function RecruiterDashboard(_props: { firstName?: string }) {
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [jobToDelete, setJobToDelete] = useState<Job | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [jobToEdit, setJobToEdit] = useState<Job | null>(null);
 
   const { data: jobs = [], isLoading, error, refetch } = useRecruiterJobs();
   const deleteJob = useDeleteJob();
+
+  const handleEdit = (e: React.MouseEvent, job: Job) => {
+    e.stopPropagation();
+    setJobToEdit(job);
+    setIsEditModalOpen(true);
+  };
 
   const handleDelete = (e: React.MouseEvent, job: Job) => {
     e.stopPropagation();
@@ -128,6 +137,13 @@ export function RecruiterDashboard(_props: { firstName?: string }) {
                         </span>
                       )}
                       <button
+                        onClick={(e) => handleEdit(e, job)}
+                        className="p-1.5 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded-md transition-all"
+                        title="Edit job posting"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </button>
+                      <button
                         onClick={(e) => handleDelete(e, job)}
                         disabled={deleteJob.isPending && jobToDelete?.id === job.id}
                         className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-all disabled:opacity-50"
@@ -183,6 +199,12 @@ export function RecruiterDashboard(_props: { firstName?: string }) {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onJobposted={() => {}} // invalidation handled by mutation
+      />
+
+      <EditJobModal
+        isOpen={isEditModalOpen}
+        onClose={() => { setIsEditModalOpen(false); setJobToEdit(null); }}
+        job={jobToEdit}
       />
 
       <JobDetailsModal
