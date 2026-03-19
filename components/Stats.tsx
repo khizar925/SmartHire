@@ -16,7 +16,7 @@ export const Stats = () => {
           </div>
           <div className="py-12 px-6 text-center group cursor-default">
             <div className="text-4xl lg:text-5xl font-extrabold text-slate-900 mb-2 group-hover:text-primary-600 transition-colors">10k+</div>
-            <div className="text-slate-500 text-sm font-medium">Active Job Seekers</div>
+            <div className="text-slate-500 text-sm font-medium">Active Job Seekers Overall</div>
           </div>
            <div className="py-12 px-6 text-center group cursor-default">
             <div className="text-4xl lg:text-5xl font-extrabold text-slate-900 mb-2 group-hover:text-primary-600 transition-colors">24/7</div>

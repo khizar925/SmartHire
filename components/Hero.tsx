@@ -21,7 +21,7 @@ export const Hero = () => {
         <div className="animate-fade-in-up opacity-0 mb-8">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-slate-200 bg-[linear-gradient(110deg,#f8fafc,45%,#f1f5f9,55%,#f8fafc)] bg-[length:200%_100%] animate-shimmer text-slate-600 text-xs font-semibold uppercase tracking-wide transition-all hover:shadow-md cursor-default">
             <Sparkles className="h-3.5 w-3.5 text-primary-500 fill-primary-100" />
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-slate-600 to-slate-800"> Launching Soon </span>
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-slate-600 to-slate-800"> Free During Beta </span>
           </div>
         </div>
 

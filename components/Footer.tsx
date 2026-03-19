@@ -18,11 +18,11 @@ export const Footer = () => {
             <p className="text-slate-500 text-sm leading-relaxed max-w-sm mb-6">
               An advanced, AI-powered recruitment management system built to automate and optimize the hiring process for everyone.
             </p>
-            <div className="flex gap-4">
+            {/* <div className="flex gap-4">
               <a href="#" onClick={(e) => e.preventDefault()} className="text-slate-400 hover:text-slate-900 transition-colors"><Github className="h-5 w-5" /></a>
               <a href="#" onClick={(e) => e.preventDefault()} className="text-slate-400 hover:text-slate-900 transition-colors"><Twitter className="h-5 w-5" /></a>
               <a href="#" onClick={(e) => e.preventDefault()} className="text-slate-400 hover:text-slate-900 transition-colors"><Linkedin className="h-5 w-5" /></a>
-            </div>
+            </div> */}
           </div>
 
           <div className="md:col-span-2">
@@ -46,7 +46,7 @@ export const Footer = () => {
           <div className="md:col-span-3">
             <h4 className="font-bold text-slate-900 mb-4">Contact</h4>
             <ul className="space-y-3 text-sm text-slate-500">
-              <li>Lahore Garrison University</li>
+              <li> Khizar Qamar</li>
               <li>Lahore, Pakistan</li>
               <li><a href="mailto:info@smarthire.app" className="hover:text-primary-600">info@smarthire.app</a></li>
             </ul>
@@ -55,7 +55,7 @@ export const Footer = () => {
         
         <div className="border-t border-slate-100 pt-8 flex flex-col md:flex-row justify-between items-center text-sm text-slate-400">
           <p className="flex items-center gap-1">
-            &copy; {new Date().getFullYear()} Smart Hire. Made with <Heart className="h-3 w-3 text-red-500 fill-current" /> in Pakistan.
+            &copy; {new Date().getFullYear()} Smart Hire.
           </p>
           <div className="flex gap-6 mt-4 md:mt-0">
             <Link href="/privacy" className="hover:text-slate-900 transition-colors">Privacy Policy</Link>

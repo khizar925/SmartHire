@@ -17,7 +17,7 @@ export const CTA = () => {
               Ready to hire smarter?
             </h2>
             <p className="text-slate-400 text-lg mb-10 max-w-2xl mx-auto">
-              Join thousands of companies and candidates using Smart Hire to connect with the right opportunities.
+              Join companies and candidates using Smart Hire to connect with the right opportunities.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
@@ -36,7 +36,7 @@ export const CTA = () => {
                 className="text-white border-white/20 hover:bg-white/10 hover:border-white"
                 onClick={(e) => e.preventDefault()}
               >
-                Contact Sales
+                Talk to Us
               </Button>
             </div>
           </div>
