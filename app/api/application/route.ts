@@ -6,31 +6,76 @@ import { sendStatusEmail } from '@/lib/email';
 const pdfParse = require('pdf-parse');
 import mammoth from 'mammoth';
 
+// ── MIME / magic-byte validation ─────────────────────────────────────────────
+
+const ALLOWED_MIME_TYPES = new Set([
+    'application/pdf',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'text/plain',
+]);
+
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
+
+type MagicResult = 'pdf' | 'docx' | 'doc' | 'txt' | 'unknown';
+
+function detectMagicBytes(buf: Buffer): MagicResult {
+    // PDF: %PDF
+    if (buf[0] === 0x25 && buf[1] === 0x50 && buf[2] === 0x44 && buf[3] === 0x46) return 'pdf';
+    // DOCX (ZIP): PK\x03\x04
+    if (buf[0] === 0x50 && buf[1] === 0x4B && buf[2] === 0x03 && buf[3] === 0x04) return 'docx';
+    // DOC (OLE2): D0 CF 11 E0
+    if (buf[0] === 0xD0 && buf[1] === 0xCF && buf[2] === 0x11 && buf[3] === 0xE0) return 'doc';
+    // TXT: valid UTF-8 with no binary content
+    try {
+        const sample = buf.slice(0, 512).toString('utf-8');
+        // Reject if more than 10% non-printable characters
+        const nonPrintable = (sample.match(/[\x00-\x08\x0E-\x1F\x7F]/g) || []).length;
+        if (nonPrintable / sample.length < 0.1) return 'txt';
+    } catch { /* fall through */ }
+    return 'unknown';
+}
+
+function validateFile(file: File, buffer: Buffer): string | null {
+    if (file.size > MAX_FILE_SIZE) {
+        return 'File size exceeds the 5MB limit.';
+    }
+    if (!ALLOWED_MIME_TYPES.has(file.type)) {
+        return `File type "${file.type}" is not allowed. Please upload a PDF, DOC, DOCX, or TXT file.`;
+    }
+    const detected = detectMagicBytes(buffer);
+    if (detected === 'unknown') {
+        return 'File content does not match a recognised format. Please upload a valid PDF, DOC, DOCX, or TXT file.';
+    }
+    return null;
+}
+
+// ── Text extraction ──────────────────────────────────────────────────────────
+
 async function parsePdfBuffer(buffer: Buffer): Promise<string> {
     const data = await pdfParse(buffer);
     return data.text;
 }
 
-async function extractTextFromFile(file: File): Promise<string> {
-    const buffer = Buffer.from(await file.arrayBuffer());
-    const fileType = file.name.split('.').pop()?.toLowerCase();
+async function extractTextFromFile(file: File, buffer: Buffer): Promise<string> {
+    const detected = detectMagicBytes(buffer);
 
     try {
-        if (fileType === 'pdf') {
+        if (detected === 'pdf') {
             return await parsePdfBuffer(buffer);
-        } else if (fileType === 'docx') {
+        } else if (detected === 'docx') {
             const result = await mammoth.extractRawText({ buffer });
             return result.value;
-        } else if (fileType === 'doc') {
-            return "Legacy .doc format detected. Automated extraction limited.";
-        } else if (fileType === 'txt') {
+        } else if (detected === 'doc') {
+            return 'Legacy .doc format detected. Automated extraction limited.';
+        } else if (detected === 'txt') {
             return buffer.toString('utf-8');
         }
     } catch (error) {
         console.error('Extraction error:', error);
-        return "";
+        return '';
     }
-    return "";
+    return '';
 }
 
 export async function POST(request: Request) {
@@ -56,6 +101,13 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
         }
 
+        // REQSAFE-03: MIME type + magic byte + size validation
+        const resumeBuffer = Buffer.from(await resume.arrayBuffer());
+        const fileValidationError = validateFile(resume, resumeBuffer);
+        if (fileValidationError) {
+            return NextResponse.json({ error: fileValidationError }, { status: 400 });
+        }
+
         // BR-02: Single Application Policy
         const { data: existingApp, error: checkError } = await supabase
             .from('applications')
@@ -72,8 +124,8 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'You have already applied for this job' }, { status: 400 });
         }
 
-        // 0. Extract Text from Resume
-        const resumeText = await extractTextFromFile(resume);
+        // 0. Extract Text from Resume (buffer already read during validation)
+        const resumeText = await extractTextFromFile(resume, resumeBuffer);
 
         // 1. Upload Resume to Storage
         const fileExt = resume.name.split('.').pop();
