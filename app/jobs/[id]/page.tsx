@@ -163,7 +163,7 @@ export default function JobPage({ params }: Props) {
         try {
             await submit.mutateAsync(fd);
             setSubmitMessage({ type: 'success', text: 'Your application has been submitted successfully! The recruiter will review it soon.' });
-            setTimeout(() => router.push('/dashboard'), 2000);
+            setTimeout(() => router.push('/dashboard/applications'), 2000);
         } catch (err: unknown) {
             const msg = err instanceof Error ? err.message : 'Failed to submit application. Please try again.';
             setSubmitMessage({ type: 'error', text: msg });
@@ -279,7 +279,7 @@ export default function JobPage({ params }: Props) {
                                     </span>
                                 </p>
                                 <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                                    <Button variant="primary" onClick={() => router.push('/dashboard')}>View All Applications</Button>
+                                    <Button variant="primary" onClick={() => router.push('/dashboard/applications')}>View All Applications</Button>
                                     <Button variant="secondary" onClick={() => setActiveTab('overview')}>Return to Job Overview</Button>
                                 </div>
                             </div>

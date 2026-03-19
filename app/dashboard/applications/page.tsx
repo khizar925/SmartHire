@@ -33,7 +33,6 @@ interface Application {
     created_at: string;
     resume_url: string;
     jobs: ApplicationJob | null;
-    scores: { score: number }[];
 }
 
 const STATUS_STYLES: Record<string, string> = {
@@ -158,8 +157,6 @@ export default function MyApplicationsPage() {
 
                         <div className="space-y-3">
                             {paginatedApplications.map((app) => {
-                                const score      = app.scores?.[0]?.score;
-                                const hasScore   = score !== undefined && score !== null;
                                 const hasFeedback = app.status === 'rejected' && !!app.rejection_feedback;
                                 const isExpanded = expandedFeedback.has(app.id);
                                 const job        = app.jobs;
@@ -209,14 +206,7 @@ export default function MyApplicationsPage() {
 
                                             {/* Right: score + status + resume */}
                                             <div className="flex items-center gap-3 flex-shrink-0">
-                                                {/* AI Score */}
-                                                <div className="text-center min-w-[56px]">
-                                                    <div className={`text-lg font-bold rounded-xl px-2 py-1 ${hasScore ? 'bg-indigo-50 text-indigo-700' : 'bg-slate-100 text-slate-300'}`}>
-                                                        {hasScore ? `${score!.toFixed(0)}` : '—'}
-                                                    </div>
-                                                    <p className="text-[10px] text-slate-400 mt-0.5 uppercase tracking-wider">Score</p>
-                                                </div>
-
+    
                                                 {/* Status badge */}
                                                 <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold border uppercase tracking-wider ${STATUS_STYLES[app.status] ?? 'bg-slate-100 text-slate-600 border-slate-200'}`}>
                                                     {app.status}
