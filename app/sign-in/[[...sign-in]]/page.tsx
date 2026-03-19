@@ -22,6 +22,7 @@ export default function SignInPage() {
             {/* Right side - Sign In Form */}
             <div className="flex items-center justify-center w-full lg:w-1/2 bg-gray-50">
                 <SignIn
+                    withSignUp={true}
                     afterSignInUrl="/onboarding"
                     afterSignUpUrl="/onboarding"
                     redirectUrl="/onboarding"

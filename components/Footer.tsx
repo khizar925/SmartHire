@@ -48,7 +48,7 @@ export const Footer = () => {
             <ul className="space-y-3 text-sm text-slate-500">
               <li> Khizar Qamar</li>
               <li>Lahore, Pakistan</li>
-              <li><a href="mailto:info@smarthire.app" className="hover:text-primary-600">info@smarthire.app</a></li>
+              <li><a href="mailto:info@smarthire.website" className="hover:text-primary-600">info@smarthire.website</a></li>
             </ul>
           </div>
         </div>
