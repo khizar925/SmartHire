@@ -131,7 +131,12 @@ export function RecruiterDashboard(_props: { firstName?: string }) {
                       </h3>
                     </div>
                     <div className="flex items-center gap-2">
-                      {isJobActive(job) && (
+                      {job.status === 'draft' && (
+                        <span className="px-2.5 py-1 rounded-full text-xs font-semibold flex-shrink-0 bg-amber-100 text-amber-700">
+                          Draft
+                        </span>
+                      )}
+                      {job.status !== 'draft' && isJobActive(job) && (
                         <span className="px-2.5 py-1 rounded-full text-xs font-semibold flex-shrink-0 bg-green-100 text-green-700">
                           New
                         </span>

@@ -4,7 +4,9 @@
 import { useState, useEffect } from 'react';
 import { X, Loader2, AlertCircle, BrainCircuit } from 'lucide-react';
 import { createPortal } from 'react-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { Button } from './Button';
+import { queryKeys } from '@/lib/query-keys';
 
 interface PostJobModalProps {
   isOpen: boolean;
@@ -23,12 +25,13 @@ export function PostJobModal({ isOpen, onClose, onJobposted }: PostJobModalProps
     skills: '',
     jobDescription: '',
   });
-  const [isLoading, setIsLoading] = useState(false);
+  const [submittingAs, setSubmittingAs] = useState<'post' | 'draft' | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [errorDetails, setErrorDetails] = useState<string[]>([]);
   const [createdJobId, setCreatedJobId] = useState<string | null>(null);
   const publicLink = process.env.NEXT_PUBLIC_APP_URL || (typeof window !== 'undefined' ? window.location.origin : '');
   const [publicLinkStatus, setPublicLinkStatus] = useState(false);
+  const qc = useQueryClient();
 
   useEffect(() => {
     setMounted(true);
@@ -136,9 +139,14 @@ export function PostJobModal({ isOpen, onClose, onJobposted }: PostJobModalProps
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
+  const resetForm = () => {
+    setFormData({ jobTitle: '', companyName: '', location: '', employmentType: '', experienceLevel: '', skills: '', jobDescription: '' });
+    setCreatedJobId(null);
+    setPublicLinkStatus(false);
+  };
+
+  const submitJob = async (status: 'active' | 'draft') => {
+    setSubmittingAs(status === 'active' ? 'post' : 'draft');
     setError(null);
     setErrorDetails([]);
 
@@ -146,9 +154,7 @@ export function PostJobModal({ isOpen, onClose, onJobposted }: PostJobModalProps
       const formattedJobDescription = formatJobDescriptionToMarkdown(formData.jobDescription);
       const response = await fetch('/api/jobs', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           job_title: formData.jobTitle,
           company_name: formData.companyName,
@@ -157,41 +163,49 @@ export function PostJobModal({ isOpen, onClose, onJobposted }: PostJobModalProps
           experience_level: formData.experienceLevel,
           skills: formData.skills,
           job_description: formattedJobDescription,
+          status,
         }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        // Handle error response
         setError('Failed to create job');
         setErrorDetails(data.details || []);
-        setIsLoading(false);
         return;
       }
 
-      // Success: Store job ID and construct proper link
-      setCreatedJobId(data.job?.id || null);
-
-      // Success: Reset form and close modal
-      setFormData({
-        jobTitle: '',
-        companyName: '',
-        location: '',
-        employmentType: '',
-        experienceLevel: '',
-        skills: '',
-        jobDescription: '',
-      });
-      setIsLoading(false);
+      // Invalidate cache so dashboard updates instantly
+      await qc.invalidateQueries({ queryKey: queryKeys.jobs() });
       onJobposted();
-      setPublicLinkStatus(true);
+
+      if (status === 'draft') {
+        // Draft: just close — no public link needed
+        resetForm();
+        onClose();
+      } else {
+        // Active: show the public link screen
+        setCreatedJobId(data.job?.id || null);
+        resetForm();
+        setPublicLinkStatus(true);
+      }
     } catch (err) {
       console.error('Error submitting job:', err);
       setError('Failed to create job');
       setErrorDetails(['Network error. Please check your connection and try again.']);
-      setIsLoading(false);
+    } finally {
+      setSubmittingAs(null);
     }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await submitJob('active');
+  };
+
+  const handleSaveAsDraft = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    await submitJob('draft');
   };
 
   const jobLink = createdJobId ? `${publicLink}/jobs/${createdJobId}` : publicLink || '';
@@ -209,17 +223,7 @@ export function PostJobModal({ isOpen, onClose, onJobposted }: PostJobModalProps
   }
 
   const handleOnClosePostModal = () => {
-    setFormData({
-      jobTitle: '',
-      companyName: '',
-      location: '',
-      employmentType: '',
-      experienceLevel: '',
-      skills: '',
-      jobDescription: '',
-    });
-    setCreatedJobId(null);
-    setPublicLinkStatus(false);
+    resetForm();
     onClose();
   }
 
@@ -451,19 +455,29 @@ export function PostJobModal({ isOpen, onClose, onJobposted }: PostJobModalProps
                 type="button"
                 variant="secondary"
                 onClick={handleOnClosePostModal}
+                disabled={submittingAs !== null}
               >
                 Cancel
               </Button>
               <Button
+                type="button"
+                variant="secondary"
+                disabled={submittingAs !== null}
+                onClick={handleSaveAsDraft}
+              >
+                {submittingAs === 'draft' ? (
+                  <><Loader2 className="h-4 w-4 animate-spin mr-2" />Saving...</>
+                ) : (
+                  'Save as Draft'
+                )}
+              </Button>
+              <Button
                 type="submit"
                 variant="primary"
-                disabled={isLoading}
+                disabled={submittingAs !== null}
               >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    Posting...
-                  </>
+                {submittingAs === 'post' ? (
+                  <><Loader2 className="h-4 w-4 animate-spin mr-2" />Posting...</>
                 ) : (
                   'Post Job'
                 )}

@@ -174,6 +174,7 @@ export function EditJobModal({ isOpen, onClose, job }: EditJobModalProps) {
               <select id="status" name="status" value={formData.status} onChange={handleChange} required
                 className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent">
                 <option value="active">Active</option>
+                <option value="draft">Draft</option>
                 <option value="closed">Closed</option>
               </select>
             </div>

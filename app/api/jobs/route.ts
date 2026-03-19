@@ -15,7 +15,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { job_title, company_name, job_location, employment_type, job_description, skills, experience_level } = body;
+    const { job_title, company_name, job_location, employment_type, job_description, skills, experience_level, status } = body;
 
     // Validate required fields
     const errors: string[] = [];
@@ -64,7 +64,7 @@ export async function POST(request: Request) {
         job_description: job_description.trim(),
         skills: skills.trim(),
         experience_level: experience_level.trim(),
-        status: 'active',
+        status: status === 'draft' ? 'draft' : 'active',
         applicants_count: 0,
       })
       .select()

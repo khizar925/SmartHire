@@ -30,7 +30,7 @@ export interface Job {
   job_description: string;
   skills: string;
   experience_level: string;
-  status: 'active' | 'closed';
+  status: 'active' | 'closed' | 'draft';
   applicants_count: number;
   created_at: string;
   updated_at: string;
