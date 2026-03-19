@@ -19,10 +19,10 @@ export default async function Home() {
         <ProblemSolution />
         <Features />
         <UsersSection />
-        <Pricing />
+        {/* <Pricing /> */}
         <CTA />
       </main>
-      {/* <Footer /> */}
+      <Footer />
     </div>
   );
 }

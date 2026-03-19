@@ -1,18 +1,13 @@
 // app/api/jobs/route.ts
-import { auth } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase-server';
+import { requireRole } from '@/lib/auth';
 
 export async function POST(request: Request) {
   try {
-    const { userId } = await auth();
-
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'Unauthorized. Please sign in to continue.' },
-        { status: 401 }
-      );
-    }
+    const authResult = await requireRole('recruiter');
+    if (authResult instanceof NextResponse) return authResult;
+    const { userId } = authResult;
 
     const body = await request.json();
     const { job_title, company_name, job_location, employment_type, job_description, skills, experience_level, status } = body;
@@ -100,14 +95,9 @@ export async function POST(request: Request) {
 
 export async function GET() {
   try {
-    const { userId } = await auth();
-
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'Unauthorized. Please sign in to continue.' },
-        { status: 401 }
-      );
-    }
+    const authResult = await requireRole('recruiter');
+    if (authResult instanceof NextResponse) return authResult;
+    const { userId } = authResult;
 
     // Fetch jobs for the current recruiter, ordered by created_at DESC
     const { data, error } = await supabase
@@ -139,10 +129,9 @@ export async function GET() {
 
 export async function PATCH(request: Request) {
   try {
-    const { userId } = await auth();
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const authResult = await requireRole('recruiter');
+    if (authResult instanceof NextResponse) return authResult;
+    const { userId } = authResult;
 
     const { searchParams } = new URL(request.url);
     const jobId = searchParams.get('id');
@@ -199,10 +188,9 @@ export async function PATCH(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
-    const { userId } = await auth();
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const authResult = await requireRole('recruiter');
+    if (authResult instanceof NextResponse) return authResult;
+    const { userId } = authResult;
 
     const { searchParams } = new URL(request.url);
     const jobId = searchParams.get('id');

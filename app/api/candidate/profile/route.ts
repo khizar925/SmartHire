@@ -1,17 +1,12 @@
-import { auth } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase-server';
+import { requireRole } from '@/lib/auth';
 
 export async function GET() {
     try {
-        const { userId } = await auth();
-
-        if (!userId) {
-            return NextResponse.json(
-                { error: 'Unauthorized' },
-                { status: 401 }
-            );
-        }
+        const authResult = await requireRole('candidate');
+        if (authResult instanceof NextResponse) return authResult;
+        const { userId } = authResult;
 
         const { data, error } = await supabase
             .from('candidate_profiles')
@@ -39,14 +34,9 @@ export async function GET() {
 
 export async function POST(request: Request) {
     try {
-        const { userId } = await auth();
-
-        if (!userId) {
-            return NextResponse.json(
-                { error: 'Unauthorized' },
-                { status: 401 }
-            );
-        }
+        const authResult = await requireRole('candidate');
+        if (authResult instanceof NextResponse) return authResult;
+        const { userId } = authResult;
 
         const body = await request.json();
         const {
@@ -76,7 +66,7 @@ export async function POST(request: Request) {
                 address,
                 education_level: educationLevel,
                 years_of_experience: yearsOfExperience,
-                updated_at: new RegExp('now()').test('now()') ? undefined : new Date().toISOString() // Let DB handle default now() if omitting
+                updated_at: new Date().toISOString()
             })
             .select()
             .single();

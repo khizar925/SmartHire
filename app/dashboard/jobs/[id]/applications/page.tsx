@@ -348,7 +348,7 @@ export default function JobApplicationsPage({ params }: { params: Promise<{ id: 
                                                     </td>
                                                     <td className="px-6 py-4">
                                                         <div className="flex items-center justify-end gap-2">
-                                                            <a href={app.resume_url} target="_blank" rel="noopener noreferrer" title="View Resume"
+                                                            <a href={`/api/resume?path=${encodeURIComponent(app.resume_url)}`} target="_blank" rel="noopener noreferrer" title="View Resume"
                                                                 className="p-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-colors">
                                                                 <FileText className="h-4 w-4" />
                                                             </a>

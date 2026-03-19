@@ -214,7 +214,7 @@ export default function MyApplicationsPage() {
 
                                                 {/* Resume link */}
                                                 <a
-                                                    href={app.resume_url}
+                                                    href={`/api/resume?path=${encodeURIComponent(app.resume_url)}`}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
                                                     title="View Resume"

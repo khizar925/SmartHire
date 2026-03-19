@@ -1,7 +1,7 @@
-import { auth } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase-server';
 import { sendStatusEmail } from '@/lib/email';
+import { requireRole } from '@/lib/auth';
 
 const pdfParse = require('pdf-parse');
 import mammoth from 'mammoth';
@@ -80,10 +80,9 @@ async function extractTextFromFile(file: File, buffer: Buffer): Promise<string> 
 
 export async function POST(request: Request) {
     try {
-        const { userId } = await auth();
-        if (!userId) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
+        const authResult = await requireRole('candidate');
+        if (authResult instanceof NextResponse) return authResult;
+        const { userId } = authResult;
 
         const formData = await request.formData();
 
@@ -144,12 +143,7 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Failed to upload resume' }, { status: 500 });
         }
 
-        // Get public URL
-        const { data: { publicUrl } } = supabase.storage
-            .from('resumes')
-            .getPublicUrl(filePath);
-
-        // 2. Insert Application Record
+        // 2. Insert Application Record (store storage path, not public URL)
         const { data: applicationData, error: dbError } = await supabase
             .from('applications')
             .insert({
@@ -161,7 +155,7 @@ export async function POST(request: Request) {
                 education_level: education,
                 years_of_experience: parseFloat(experience),
                 cover_letter: coverLetter,
-                resume_url: publicUrl,
+                resume_url: filePath,
                 resume_text: resumeText,
                 status: 'pending'
             })
@@ -247,11 +241,6 @@ export async function POST(request: Request) {
 
 export async function GET(request: Request) {
     try {
-        const { userId } = await auth();
-        if (!userId) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
-
         const { searchParams } = new URL(request.url);
         const jobId = searchParams.get('jobId');
         const check = searchParams.get('check') === 'true';
@@ -260,7 +249,12 @@ export async function GET(request: Request) {
             return NextResponse.json({ error: 'Job ID is required' }, { status: 400 });
         }
 
+        // Candidate checking their own application status
         if (check) {
+            const authResult = await requireRole('candidate');
+            if (authResult instanceof NextResponse) return authResult;
+            const { userId } = authResult;
+
             const { data, error } = await supabase
                 .from('applications')
                 .select('id, status')
@@ -275,6 +269,11 @@ export async function GET(request: Request) {
 
             return NextResponse.json({ hasApplied: !!data, application: data });
         }
+
+        // Recruiter viewing applications for their job
+        const recruiterAuth = await requireRole('recruiter');
+        if (recruiterAuth instanceof NextResponse) return recruiterAuth;
+        const { userId } = recruiterAuth;
 
         // Verify the authenticated user owns this job before returning applications
         const { data: jobData, error: jobError } = await supabase
@@ -307,10 +306,9 @@ export async function GET(request: Request) {
 }
 export async function PATCH(request: Request) {
     try {
-        const { userId } = await auth();
-        if (!userId) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
+        const authResult = await requireRole('recruiter');
+        if (authResult instanceof NextResponse) return authResult;
+        const { userId } = authResult;
 
         const body = await request.json();
         const { applicationId, status, feedback } = body;

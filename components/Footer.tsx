@@ -1,6 +1,7 @@
 'use client';
 
 import { BrainCircuit, Github, Twitter, Linkedin, Heart } from 'lucide-react';
+import Link from 'next/link';
 
 export const Footer = () => {
   return (
@@ -27,20 +28,18 @@ export const Footer = () => {
           <div className="md:col-span-2">
             <h4 className="font-bold text-slate-900 mb-4">Product</h4>
             <ul className="space-y-3 text-sm text-slate-500">
-              <li><a href="#" onClick={(e) => e.preventDefault()} className="hover:text-primary-600 transition-colors">Features</a></li>
-              <li><a href="#" onClick={(e) => e.preventDefault()} className="hover:text-primary-600 transition-colors">Pricing</a></li>
-              <li><a href="#" onClick={(e) => e.preventDefault()} className="hover:text-primary-600 transition-colors">Recruiters</a></li>
-              <li><a href="#" onClick={(e) => e.preventDefault()} className="hover:text-primary-600 transition-colors">Candidates</a></li>
+              <li><a href="#features" className="hover:text-primary-600 transition-colors">Features</a></li>
+              <li><a href="#how-it-works" className="hover:text-primary-600 transition-colors">How It Works</a></li>
+              <li><a href="#users" className="hover:text-primary-600 transition-colors">For Recruiters</a></li>
+              <li><a href="#users" className="hover:text-primary-600 transition-colors">For Candidates</a></li>
             </ul>
           </div>
 
           <div className="md:col-span-2">
-            <h4 className="font-bold text-slate-900 mb-4">Resources</h4>
+            <h4 className="font-bold text-slate-900 mb-4">Legal</h4>
             <ul className="space-y-3 text-sm text-slate-500">
-              <li><a href="#" onClick={(e) => e.preventDefault()} className="hover:text-primary-600 transition-colors">Blog</a></li>
-              <li><a href="#" onClick={(e) => e.preventDefault()} className="hover:text-primary-600 transition-colors">Documentation</a></li>
-              <li><a href="#" onClick={(e) => e.preventDefault()} className="hover:text-primary-600 transition-colors">Help Center</a></li>
-              <li><a href="#" onClick={(e) => e.preventDefault()} className="hover:text-primary-600 transition-colors">API</a></li>
+              <li><Link href="/privacy" className="hover:text-primary-600 transition-colors">Privacy Policy</Link></li>
+              <li><Link href="/terms" className="hover:text-primary-600 transition-colors">Terms of Service</Link></li>
             </ul>
           </div>
 
@@ -59,8 +58,8 @@ export const Footer = () => {
             &copy; {new Date().getFullYear()} Smart Hire. Made with <Heart className="h-3 w-3 text-red-500 fill-current" /> in Pakistan.
           </p>
           <div className="flex gap-6 mt-4 md:mt-0">
-            <a href="#" onClick={(e) => e.preventDefault()} className="hover:text-slate-900 transition-colors">Privacy Policy</a>
-            <a href="#" onClick={(e) => e.preventDefault()} className="hover:text-slate-900 transition-colors">Terms of Service</a>
+            <Link href="/privacy" className="hover:text-slate-900 transition-colors">Privacy Policy</Link>
+            <Link href="/terms" className="hover:text-slate-900 transition-colors">Terms of Service</Link>
           </div>
         </div>
       </div>

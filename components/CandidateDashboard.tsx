@@ -1,8 +1,8 @@
 // components/CandidateDashboard.tsx
 'use client';
 
-import { useState } from 'react';
-import { Briefcase, Loader2, AlertCircle, MapPin, Clock, Users, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Briefcase, Loader2, AlertCircle, MapPin, Clock, Users, Calendar, ChevronLeft, ChevronRight, Search, X } from 'lucide-react';
 import { Button } from './Button';
 import { formatTimeAgo, isNewJob } from '@/lib/date-utils';
 import type { Job } from '@/types';
@@ -11,10 +11,23 @@ import { usePublicJobs } from '@/lib/queries/jobs';
 
 export function CandidateDashboard(_props: { firstName?: string }) {
   const [page, setPage] = useState(1);
+  const [searchInput, setSearchInput] = useState('');
+  const [search, setSearch] = useState('');
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const publicLink = process.env.NEXT_PUBLIC_APP_URL || (typeof window !== 'undefined' ? window.location.origin : '');
   const limit = 12;
 
-  const { data, isLoading, error, refetch } = usePublicJobs(page);
+  // Debounce search: wait 400ms after user stops typing before querying
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      setSearch(searchInput);
+      setPage(1); // Reset to first page on new search
+    }, 400);
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, [searchInput]);
+
+  const { data, isLoading, error, refetch } = usePublicJobs(page, search);
 
   const jobs       = data?.jobs       ?? [];
   const total      = data?.total      ?? 0;
@@ -37,12 +50,33 @@ export function CandidateDashboard(_props: { firstName?: string }) {
   return (
     <div className="space-y-6">
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 md:p-8">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <h2 className="text-2xl font-bold text-slate-900">Available Jobs</h2>
           {!isLoading && !isError && total > 0 && (
             <span className="text-sm text-slate-600 hidden sm:inline">
               Showing {getStartIndex()}–{getEndIndex()} of {total} jobs
             </span>
+          )}
+        </div>
+
+        {/* Search bar */}
+        <div className="relative mb-6">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+          <input
+            type="text"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            placeholder="Search by job title, company, or location…"
+            className="w-full pl-10 pr-10 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+          />
+          {searchInput && (
+            <button
+              onClick={() => setSearchInput('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              aria-label="Clear search"
+            >
+              <X className="h-4 w-4" />
+            </button>
           )}
         </div>
 
@@ -69,8 +103,17 @@ export function CandidateDashboard(_props: { firstName?: string }) {
         {isEmpty && (
           <div className="text-center py-12">
             <Briefcase className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-slate-900 mb-2">No active jobs available</h3>
-            <p className="text-slate-600">Check back soon for new opportunities!</p>
+            {search ? (
+              <>
+                <h3 className="text-lg font-semibold text-slate-900 mb-2">No jobs found for "{search}"</h3>
+                <p className="text-slate-600">Try different keywords or <button onClick={() => setSearchInput('')} className="text-primary-600 hover:underline">clear the search</button>.</p>
+              </>
+            ) : (
+              <>
+                <h3 className="text-lg font-semibold text-slate-900 mb-2">No active jobs available</h3>
+                <p className="text-slate-600">Check back soon for new opportunities!</p>
+              </>
+            )}
           </div>
         )}
 

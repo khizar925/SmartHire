@@ -11,6 +11,7 @@ interface PaginatedJobsResponse {
   limit: number;
   totalPages: number;
   hasMore: boolean;
+  search: string;
 }
 
 type JobData = {
@@ -31,10 +32,14 @@ export function useRecruiterJobs() {
   });
 }
 
-export function usePublicJobs(page: number) {
+export function usePublicJobs(page: number, search: string = '') {
   return useQuery({
-    queryKey: queryKeys.publicJobs(page),
-    queryFn: () => apiFetch<PaginatedJobsResponse>(`/api/jobs/public?page=${page}&limit=12`),
+    queryKey: queryKeys.publicJobs(page, search),
+    queryFn: () => {
+      const params = new URLSearchParams({ page: String(page), limit: '12' });
+      if (search) params.set('search', search);
+      return apiFetch<PaginatedJobsResponse>(`/api/jobs/public?${params.toString()}`);
+    },
     placeholderData: keepPreviousData,
   });
 }

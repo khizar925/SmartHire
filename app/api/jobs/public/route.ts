@@ -1,5 +1,3 @@
-export const revalidate = 300; // 5 min server-side cache — safe because this route is unauthenticated
-
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase-server';
 
@@ -9,15 +7,24 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
     const limit = Math.min(50, Math.max(1, parseInt(searchParams.get('limit') || '12', 10)));
+    const search = searchParams.get('search')?.trim() || '';
 
     // Calculate offset
     const offset = (page - 1) * limit;
 
-    // First, get total count of active jobs
-    const { count, error: countError } = await supabase
+    // Build the search filter string once
+    const searchFilter = search
+      ? `job_title.ilike.%${search}%,company_name.ilike.%${search}%,job_location.ilike.%${search}%`
+      : null;
+
+    // First, get total count
+    let countQuery = supabase
       .from('jobs')
       .select('*', { count: 'exact', head: true })
       .eq('status', 'active');
+    if (searchFilter) countQuery = countQuery.or(searchFilter);
+
+    const { count, error: countError } = await countQuery;
 
     if (countError) {
       console.error('Supabase error counting jobs:', countError);
@@ -32,12 +39,15 @@ export async function GET(request: Request) {
     const hasMore = page < totalPages;
 
     // Fetch active jobs with pagination
-    const { data, error } = await supabase
+    let dataQuery = supabase
       .from('jobs')
       .select('*')
       .eq('status', 'active')
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
+    if (searchFilter) dataQuery = dataQuery.or(searchFilter);
+
+    const { data, error } = await dataQuery;
 
     if (error) {
       console.error('Supabase error fetching jobs:', error);
@@ -55,6 +65,7 @@ export async function GET(request: Request) {
         limit,
         totalPages,
         hasMore,
+        search,
       },
       { status: 200 }
     );
