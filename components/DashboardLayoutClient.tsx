@@ -9,6 +9,7 @@ const UserButton = dynamic(
 );
 import { AppSidebar } from '@/components/app-sidebar';
 import { ScoreResumeModal } from '@/components/ScoreResumeModal';
+import { FeedbackButton } from '@/components/FeedbackButton';
 import { SidebarProvider, SidebarTrigger, SidebarInset } from '@/components/ui/sidebar';
 import { BrainCircuit } from 'lucide-react';
 import type { UserRole } from '@/types';
@@ -24,30 +25,33 @@ export function DashboardLayoutClient({ children, role, firstName }: DashboardLa
 
     if (role === 'recruiter') {
         return (
-            <div className="flex min-h-screen w-full bg-slate-50 font-sans">
-                <div className="flex flex-col flex-1 min-h-screen w-full relative">
-                    <header className="flex h-16 md:h-20 shrink-0 items-center justify-between gap-4 border-b bg-white px-4 md:px-8 sticky top-0 z-10 w-full shadow-sm transition-all duration-300">
-                        <div className="flex items-center gap-4">
-                            <div className="flex items-center gap-3 group">
-                                <div className="bg-primary-600 text-white p-2.5 rounded-xl shadow-lg shadow-primary-600/20">
-                                    <BrainCircuit className="h-6 w-6" />
+            <>
+                <div className="flex min-h-screen w-full bg-slate-50 font-sans">
+                    <div className="flex flex-col flex-1 min-h-screen w-full relative">
+                        <header className="flex h-16 md:h-20 shrink-0 items-center justify-between gap-4 border-b bg-white px-4 md:px-8 sticky top-0 z-10 w-full shadow-sm transition-all duration-300">
+                            <div className="flex items-center gap-4">
+                                <div className="flex items-center gap-3 group">
+                                    <div className="bg-primary-600 text-white p-2.5 rounded-xl shadow-lg shadow-primary-600/20">
+                                        <BrainCircuit className="h-6 w-6" />
+                                    </div>
+                                    <span className="text-xl font-bold text-slate-900 font-serif tracking-tight">Smart Hire</span>
                                 </div>
-                                <span className="text-xl font-bold text-slate-900 font-serif tracking-tight">Smart Hire</span>
+                                <div className="h-6 w-px bg-slate-200 hidden md:block ml-2" />
+                                <span className="text-sm font-medium text-slate-400 hidden md:block tracking-wide">Recruiter Portal</span>
                             </div>
-                            <div className="h-6 w-px bg-slate-200 hidden md:block ml-2" />
-                            <span className="text-sm font-medium text-slate-400 hidden md:block tracking-wide">Recruiter Portal</span>
-                        </div>
-                        <div className="flex items-center gap-4">
-                            <UserButton afterSignOutUrl="/" />
-                        </div>
-                    </header>
-                    <main className="flex-1 w-full p-4 md:p-8 overflow-x-hidden">
-                        <div className="max-w-7xl mx-auto">
-                            {children}
-                        </div>
-                    </main>
+                            <div className="flex items-center gap-4">
+                                <UserButton afterSignOutUrl="/" />
+                            </div>
+                        </header>
+                        <main className="flex-1 w-full p-4 md:p-8 overflow-x-hidden">
+                            <div className="max-w-7xl mx-auto">
+                                {children}
+                            </div>
+                        </main>
+                    </div>
                 </div>
-            </div>
+                <FeedbackButton />
+            </>
         );
     }
 
@@ -86,6 +90,8 @@ export function DashboardLayoutClient({ children, role, firstName }: DashboardLa
                     isOpen={isScoreModalOpen}
                     onClose={() => setIsScoreModalOpen(false)}
                 />
+
+                <FeedbackButton />
             </div>
         </SidebarProvider>
     );

@@ -4,12 +4,14 @@
 import { use, useState, useEffect } from 'react';
 import { Loader2, AlertCircle, MapPin, Clock, Upload, CheckCircle, X } from 'lucide-react';
 import { Button } from '@/components/Button';
+import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@clerk/nextjs';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
+import { UserNav } from '@/components/UserNav';
 import { usePublicJob } from '@/lib/queries/jobs';
 import { useApplicationCheck } from '@/lib/queries/applications';
 import { useCandidateProfile } from '@/lib/queries/candidate';
@@ -207,6 +209,14 @@ export default function JobPage({ params }: Props) {
 
     return (
         <div className="min-h-screen bg-slate-50">
+            <header className="sticky top-0 z-10 bg-white border-b border-slate-100 shadow-sm">
+                <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
+                    <Link href="/" className="flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-primary-600 transition-colors">
+                        ← Back to Home
+                    </Link>
+                    <UserNav />
+                </div>
+            </header>
             <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
                 {/* Header */}
                 <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 md:p-8 mb-6">

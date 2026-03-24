@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { BrainCircuit } from 'lucide-react';
+import { UserNav } from '@/components/UserNav';
 
 export const metadata = {
   title: 'Privacy Policy – Smart Hire',
@@ -20,9 +21,12 @@ export default function PrivacyPolicy() {
             </div>
             <span className="font-bold text-xl text-slate-900 font-serif">Smart Hire</span>
           </Link>
-          <Link href="/" className="text-sm text-slate-500 hover:text-primary-600 transition-colors">
-            ← Back to Home
-          </Link>
+          <div className="flex items-center gap-4">
+            <Link href="/" className="text-sm text-slate-500 hover:text-primary-600 transition-colors">
+              ← Back to Home
+            </Link>
+            <UserNav />
+          </div>
         </div>
       </header>
 
