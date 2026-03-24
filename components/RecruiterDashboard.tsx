@@ -81,7 +81,7 @@ export function RecruiterDashboard(_props: { firstName?: string }) {
         <RecruiterAnalytics />
 
         {/* Job Postings section */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 md:p-8">
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-6 md:p-8">
           <div className="mb-6">
             <h2 className="text-2xl font-bold text-slate-900">Job Postings</h2>
           </div>
@@ -122,7 +122,7 @@ export function RecruiterDashboard(_props: { firstName?: string }) {
               {jobs.map((job: Job) => (
                 <div
                   key={job.id}
-                  className="border border-slate-200 rounded-lg p-6 hover:shadow-md transition-shadow flex flex-col"
+                  className="border border-slate-200 rounded-lg p-4 sm:p-6 hover:shadow-md transition-shadow flex flex-col overflow-hidden"
                 >
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1 min-w-0">
@@ -130,7 +130,7 @@ export function RecruiterDashboard(_props: { firstName?: string }) {
                         {job.job_title}
                       </h3>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-shrink-0 ml-2">
                       {job.status === 'draft' && (
                         <span className="px-2.5 py-1 rounded-full text-xs font-semibold flex-shrink-0 bg-amber-100 text-amber-700">
                           Draft

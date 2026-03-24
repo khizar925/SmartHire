@@ -66,14 +66,14 @@ export function JobDetailsModal({ isOpen, onClose, job }: JobDetailsModalProps) 
         <div className="p-6 border-b border-slate-100 flex-shrink-0 bg-white">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4 flex-1">
-              <div className="bg-primary-600 text-white p-2.5 rounded-xl shadow-md shadow-primary-600/20">
+              <div className="hidden sm:block bg-primary-600 text-white p-2.5 rounded-xl shadow-md shadow-primary-600/20">
                 <BrainCircuit className="h-6 w-6 flex-shrink-0" />
               </div>
               <div className="flex-1 min-w-0">
-                <h2 className="text-2xl font-bold text-slate-900 truncate font-serif tracking-tight">{job.job_title}</h2>
+                <h2 className="text-lg sm:text-2xl font-bold text-slate-900 truncate font-serif tracking-tight">{job.job_title}</h2>
               </div>
               <span
-                className={`px-3 py-1 rounded-full text-xs font-semibold flex-shrink-0 ${job.status === 'active'
+                className={`px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-xs font-semibold flex-shrink-0 ${job.status === 'active'
                   ? 'bg-green-100 text-green-700'
                   : 'bg-slate-100 text-slate-700'
                   }`}
@@ -95,14 +95,14 @@ export function JobDetailsModal({ isOpen, onClose, job }: JobDetailsModalProps) 
         <div className="overflow-y-auto flex-1">
           <div className="p-6 space-y-6">
             {/* Company Name */}
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <h3 className="text-lg font-semibold text-slate-900 mb-2">Company</h3>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div className="flex items-baseline gap-2 flex-wrap">
+                <h3 className="text-lg font-semibold text-slate-900">Company:</h3>
                 <p className="text-slate-700">{job.company_name}</p>
               </div>
               <Link
                 href={`/dashboard/jobs/${job.id}/applications`}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-bold hover:bg-primary-700 transition-all shadow-sm flex-shrink-0"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-bold hover:bg-primary-700 transition-all shadow-sm sm:flex-shrink-0 w-full sm:w-auto justify-center sm:justify-start"
               >
                 <Users className="h-4 w-4" />
                 View All Applications

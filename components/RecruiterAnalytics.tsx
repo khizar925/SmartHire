@@ -58,42 +58,42 @@ export function RecruiterAnalytics() {
     <div className="space-y-6">
       {/* Stat cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex items-center gap-4">
-          <div className="bg-sky-50 p-3 rounded-lg">
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
+          <div className="bg-sky-50 p-2.5 sm:p-3 rounded-lg flex-shrink-0">
             <Briefcase className="h-5 w-5 text-sky-600" />
           </div>
-          <div>
+          <div className="min-w-0">
             <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Open Posts</p>
             <p className="text-2xl font-bold text-slate-900">{data.openPosts}</p>
           </div>
         </div>
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex items-center gap-4">
-          <div className="bg-indigo-50 p-3 rounded-lg">
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
+          <div className="bg-indigo-50 p-2.5 sm:p-3 rounded-lg flex-shrink-0">
             <Users className="h-5 w-5 text-indigo-600" />
           </div>
-          <div>
+          <div className="min-w-0">
             <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Total Applicants</p>
             <p className="text-2xl font-bold text-slate-900">
               {data.statusBreakdown.reduce((s, d) => s + d.count, 0)}
             </p>
           </div>
         </div>
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex items-center gap-4">
-          <div className="bg-green-50 p-3 rounded-lg">
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
+          <div className="bg-green-50 p-2.5 sm:p-3 rounded-lg flex-shrink-0">
             <CheckCircle className="h-5 w-5 text-green-600" />
           </div>
-          <div>
+          <div className="min-w-0">
             <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Shortlisted</p>
             <p className="text-2xl font-bold text-slate-900">
               {data.statusBreakdown.find((d) => d.status === 'shortlisted')?.count ?? 0}
             </p>
           </div>
         </div>
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex items-center gap-4">
-          <div className="bg-violet-50 p-3 rounded-lg">
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
+          <div className="bg-violet-50 p-2.5 sm:p-3 rounded-lg flex-shrink-0">
             <Star className="h-5 w-5 text-violet-600" />
           </div>
-          <div>
+          <div className="min-w-0">
             <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Hired</p>
             <p className="text-2xl font-bold text-slate-900">
               {data.statusBreakdown.find((d) => d.status === 'hired')?.count ?? 0}

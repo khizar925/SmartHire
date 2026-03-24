@@ -41,7 +41,7 @@ export function DashboardLayoutClient({ children, role, firstName }: DashboardLa
                             <UserButton afterSignOutUrl="/" />
                         </div>
                     </header>
-                    <main className="flex-1 w-full p-4 md:p-8">
+                    <main className="flex-1 w-full p-4 md:p-8 overflow-x-hidden">
                         <div className="max-w-7xl mx-auto">
                             {children}
                         </div>
