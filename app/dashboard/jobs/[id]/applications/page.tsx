@@ -540,7 +540,6 @@ export default function JobApplicationsPage({ params }: { params: Promise<{ id: 
                                 </table>
                             </div>
                         </div>
-                        </div>
 
                         {totalPages > 1 && (
                             <div className="mt-4 flex justify-center">
