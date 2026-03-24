@@ -255,7 +255,7 @@ export default function JobApplicationsPage({ params }: { params: Promise<{ id: 
 
                 {/* Filters */}
                 {!isLoading && !error && applications.length > 0 && (
-                    <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm mb-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                         <div className="relative">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                             <input type="text" placeholder="Search by name or email..." value={searchQuery}
@@ -325,7 +325,77 @@ export default function JobApplicationsPage({ params }: { params: Promise<{ id: 
                     </div>
                 ) : (
                     <>
-                        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-8">
+                        {/* Mobile card view */}
+                        <div className="sm:hidden space-y-3 mb-8">
+                            {paginated.map((app: Application, pageIdx) => {
+                                const globalIdx = (currentPage - 1) * itemsPerPage + pageIdx;
+                                const score = app.scores?.[0]?.score;
+                                const isPending = score === -1;
+                                const hasScore = score !== undefined && score !== null && !isPending;
+                                const isUpdating = updateStatus.isPending && updateStatus.variables?.applicationId === app.id;
+                                const isRetrying = retryingId === app.id;
+                                return (
+                                    <div key={app.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 space-y-3">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-3">
+                                                <span className={`inline-flex items-center justify-center w-7 h-7 rounded-lg text-xs font-bold flex-shrink-0 ${getRankStyle(globalIdx)}`}>{globalIdx + 1}</span>
+                                                <div>
+                                                    <p className="font-bold text-slate-900 text-sm">{app.full_name}</p>
+                                                    <p className="text-xs text-slate-500">{app.email}</p>
+                                                </div>
+                                            </div>
+                                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border uppercase tracking-wider ${
+                                                app.status === 'shortlisted' ? 'bg-sky-50 text-sky-700 border-sky-100' :
+                                                app.status === 'rejected' ? 'bg-red-50 text-red-700 border-red-100' :
+                                                app.status === 'hired' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
+                                                'bg-blue-50 text-blue-700 border-blue-100'
+                                            }`}>{app.status}</span>
+                                        </div>
+                                        <div className="flex items-center gap-4 text-xs text-slate-600">
+                                            <span className="flex items-center gap-1"><Briefcase className="h-3.5 w-3.5 text-slate-400" />{app.years_of_experience} yrs</span>
+                                            <span className="flex items-center gap-1"><GraduationCap className="h-3.5 w-3.5 text-slate-400" />{app.education_level}</span>
+                                            {hasScore && <span className="flex items-center gap-1"><Award className="h-3.5 w-3.5 text-indigo-400" />{score!.toFixed(1)}</span>}
+                                            {isPending && (
+                                                <span className="flex items-center gap-1">
+                                                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-600 border border-amber-200 uppercase">Pending</span>
+                                                    <button onClick={() => handleRetryScore(app.id)} disabled={isRetrying} className="p-1 bg-slate-100 rounded text-slate-500 hover:text-amber-600 disabled:opacity-50">
+                                                        {isRetrying ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
+                                                    </button>
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div className="flex items-center justify-end gap-2 pt-1 border-t border-slate-100">
+                                            <a href={`/api/resume?path=${encodeURIComponent(app.resume_url)}`} target="_blank" rel="noopener noreferrer" title="View Resume" className="p-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-colors">
+                                                <FileText className="h-4 w-4" />
+                                            </a>
+                                            {app.status === 'pending' && (
+                                                <>
+                                                    <button onClick={() => handleShortlistClick(app.id)} disabled={isUpdating} title="Shortlist" className="p-2 bg-sky-100 text-sky-600 rounded-lg hover:bg-sky-200 transition-colors disabled:opacity-50">
+                                                        {isUpdating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Calendar className="h-4 w-4" />}
+                                                    </button>
+                                                    <button onClick={() => handleRejectClick(app.id)} disabled={isUpdating} title="Reject" className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors disabled:opacity-50">
+                                                        <XCircle className="h-4 w-4" />
+                                                    </button>
+                                                </>
+                                            )}
+                                            {app.status === 'shortlisted' && (
+                                                <>
+                                                    <button onClick={() => handleUpdateStatus(app.id, 'hired')} disabled={isUpdating} title="Mark as Hired" className="p-2 bg-emerald-100 text-emerald-600 rounded-lg hover:bg-emerald-200 transition-colors disabled:opacity-50">
+                                                        {isUpdating ? <Loader2 className="h-4 w-4 animate-spin" /> : <ThumbsUp className="h-4 w-4" />}
+                                                    </button>
+                                                    <button onClick={() => handleRejectClick(app.id)} disabled={isUpdating} title="Reject" className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors disabled:opacity-50">
+                                                        <ThumbsDown className="h-4 w-4" />
+                                                    </button>
+                                                </>
+                                            )}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        {/* Desktop table view */}
+                        <div className="hidden sm:block bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-8">
                             <div className="overflow-x-auto">
                                 <table className="w-full text-left border-collapse">
                                     <thead>
@@ -470,6 +540,7 @@ export default function JobApplicationsPage({ params }: { params: Promise<{ id: 
                                 </table>
                             </div>
                         </div>
+                        </div>
 
                         {totalPages > 1 && (
                             <div className="mt-4 flex justify-center">
@@ -508,9 +579,9 @@ export default function JobApplicationsPage({ params }: { params: Promise<{ id: 
 
             {/* Interview Scheduling Modal */}
             {isScheduleModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
                     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => { setIsScheduleModalOpen(false); setConfirmedCalUrl(null); }} />
-                    <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 overflow-hidden">
+                    <div className="relative bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full max-w-md p-6 overflow-y-auto max-h-[95vh] sm:max-h-[90vh] mt-auto sm:mt-0">
 
                         {confirmedCalUrl ? (
                             /* ── Calendar step ── */
@@ -602,9 +673,9 @@ export default function JobApplicationsPage({ params }: { params: Promise<{ id: 
 
             {/* Rejection Modal */}
             {isRejectionModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
                     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsRejectionModalOpen(false)} />
-                    <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 overflow-hidden">
+                    <div className="relative bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full max-w-md p-6 overflow-hidden mt-auto sm:mt-0">
                         <div className="flex items-center justify-between mb-6">
                             <h3 className="text-xl font-bold text-slate-900">Provide Feedback</h3>
                             <button onClick={() => setIsRejectionModalOpen(false)} className="p-2 hover:bg-slate-100 rounded-lg">

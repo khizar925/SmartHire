@@ -234,14 +234,14 @@ export function PostJobModal({ isOpen, onClose, onJobposted }: PostJobModalProps
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[999] flex items-center justify-center p-4"
+      className="fixed inset-0 z-[999] flex items-end sm:items-center justify-center p-0 sm:p-4"
       onClick={handleBackdropClick}
     >
       {/* Backdrop */}
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" aria-hidden="true" />
 
       {/* Modal Container */}
-      <div className="relative z-[1000] w-full max-w-2xl max-h-[90vh] bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in duration-300">
+      <div className="relative z-[1000] w-full max-w-2xl max-h-[95vh] sm:max-h-[90vh] bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in slide-in-from-bottom-4 sm:zoom-in duration-300 mt-auto sm:mt-0">
         {publicLinkStatus ? <div>
           <div className="flex items-center justify-between p-6 border-b border-slate-100 bg-white">
             <div className="flex items-center gap-3">

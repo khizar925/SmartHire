@@ -26,7 +26,7 @@ export function DashboardLayoutClient({ children, role, firstName }: DashboardLa
         return (
             <div className="flex min-h-screen w-full bg-slate-50 font-sans">
                 <div className="flex flex-col flex-1 min-h-screen w-full relative">
-                    <header className="flex h-20 shrink-0 items-center justify-between gap-4 border-b bg-white px-8 sticky top-0 z-10 w-full shadow-sm transition-all duration-300">
+                    <header className="flex h-16 md:h-20 shrink-0 items-center justify-between gap-4 border-b bg-white px-4 md:px-8 sticky top-0 z-10 w-full shadow-sm transition-all duration-300">
                         <div className="flex items-center gap-4">
                             <div className="flex items-center gap-3 group">
                                 <div className="bg-primary-600 text-white p-2.5 rounded-xl shadow-lg shadow-primary-600/20">
@@ -41,7 +41,7 @@ export function DashboardLayoutClient({ children, role, firstName }: DashboardLa
                             <UserButton afterSignOutUrl="/" />
                         </div>
                     </header>
-                    <main className="flex-1 w-full p-6 md:p-8">
+                    <main className="flex-1 w-full p-4 md:p-8">
                         <div className="max-w-7xl mx-auto">
                             {children}
                         </div>
