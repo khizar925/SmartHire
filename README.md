@@ -1,58 +1,54 @@
-# Smart Hire - AI-Powered Recruitment
+# SmartHire
 
-A modern, AI-powered recruitment management system landing page built with Next.js. This application provides a comprehensive platform for automating and optimizing the hiring process.
+AI-powered recruitment platform that helps recruiters post jobs, screen candidates, and manage the full hiring pipeline — all in one place.
 
-## 📋 Description
+**Live:** [smarthire.website](https://smarthire.website)
 
-Smart Hire is an advanced recruitment management system that leverages AI to streamline the hiring process. The application features a beautiful, responsive landing page with authentication capabilities, showcasing features, pricing, and user testimonials.
+---
 
-## 🚀 Getting Started
+## What it does
 
-### Prerequisites
+**For Recruiters**
+- Post and manage job listings
+- Review applications with AI-generated resume scores
+- Shortlist, schedule interviews, reject, or hire candidates
+- Track analytics across all job postings
 
-- **Node.js** 18+ (recommended)
-- **npm** or **yarn** package manager
+**For Candidates**
+- Browse and apply to open positions
+- Track application status in real time
+- Auto-fill applications from a saved profile
+- Score your own resume against any job description
 
-### Installation
+---
 
-1. **Clone the repository:**
-   ```bash
-   git clone <repository-url>
-   cd SmartHire
-   ```
+## Tech Stack
 
-2. **Install dependencies:**
-   ```bash
-   npm install
-   ```
+| Layer | Technology |
+|---|---|
+| Framework | Next.js 16 (App Router, Turbopack) |
+| Language | TypeScript |
+| Styling | Tailwind CSS |
+| Auth | Clerk |
+| Database | Supabase (PostgreSQL) |
+| AI | Google Gemini |
+| Email | Resend |
+| Animations | Framer Motion |
+| Data Fetching | TanStack Query |
+| Deployment | Vercel |
 
-3. **Set up environment variables:**
-   ```bash
-   cp .env.example .env
-   ```
-   
-   Configure your Clerk authentication keys in the `.env` file:
-   ```env
-   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
-   CLERK_SECRET_KEY=your_clerk_secret_key
-   ```
+---
 
-4. **Run the development server:**
-   ```bash
-   npm run dev
-   ```
+## Architecture
 
-5. **Open your browser:**
-   Navigate to [http://localhost:3000](http://localhost:3000)
+- **App Router** with server and client components
+- **Role-based access** — recruiter and candidate flows are fully separated at the route and API level
+- **Optimistic UI** via TanStack Query mutations with cache invalidation
+- **AI resume scoring** — resume PDF is parsed and scored against the job description using Gemini
+- **Transactional emails** sent on application status changes (shortlisted, interview scheduled, hired, rejected)
 
+---
 
-## 🛠️ Tech Stack
+## License
 
-- **Framework:** Next.js 16 (App Router)
-- **Language:** TypeScript
-- **Styling:** Tailwind CSS
-- **Authentication:** Clerk
-- **Icons:** Lucide React
-- **Animations:** Framer Motion
-- **Image Optimization:** Next.js Image component
-
+MIT
