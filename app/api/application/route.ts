@@ -378,7 +378,7 @@ export async function PATCH(request: Request) {
         }
 
         // Send email notification to candidate on status change
-        const notifyStatuses = ['accepted', 'rejected', 'shortlisted'];
+        const notifyStatuses = ['accepted', 'rejected', 'shortlisted', 'hired'];
         if (notifyStatuses.includes(status)) {
             try {
                 await sendStatusEmail({

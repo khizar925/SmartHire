@@ -15,7 +15,7 @@ interface StatusEmailParams {
     candidateName: string;
     jobTitle: string;
     companyName: string;
-    status: 'accepted' | 'rejected' | 'shortlisted';
+    status: 'accepted' | 'rejected' | 'shortlisted' | 'hired';
     feedback?: string;
     interviewDate?: string;
     interviewTime?: string;
@@ -229,6 +229,7 @@ function rejectedHtml(candidateName: string, jobTitle: string, companyName: stri
 const subjects: Record<StatusEmailParams['status'], (jobTitle: string) => string> = {
     shortlisted: (t) => `🎯 You've been shortlisted for ${t}`,
     accepted:    (t) => `🎉 Congratulations! Your application for ${t} has been accepted`,
+    hired:       (t) => `🎉 Congratulations! Your application for ${t} has been accepted`,
     rejected:    (t) => `Your application for ${t} — an update`,
 };
 
@@ -245,6 +246,7 @@ export async function sendStatusEmail(params: StatusEmailParams) {
     const htmlMap: Record<StatusEmailParams['status'], string> = {
         shortlisted: shortlistedHtml(safeName, safeTitle, safeCompany, interviewDate, interviewTime),
         accepted:    acceptedHtml(safeName, safeTitle, safeCompany),
+        hired:       acceptedHtml(safeName, safeTitle, safeCompany),
         rejected:    rejectedHtml(safeName, safeTitle, safeCompany, safeFeedback),
     };
 
