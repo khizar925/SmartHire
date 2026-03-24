@@ -118,28 +118,42 @@ export default function TermsOfService() {
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-slate-900 mb-3">10. Termination</h2>
+            <h2 className="text-xl font-bold text-slate-900 mb-3">10. Data Loss &amp; Security Incidents</h2>
+            <p className="text-slate-600 leading-relaxed mb-4">
+              While Smart Hire takes reasonable technical measures to protect your data — including encrypted storage, private file buckets, and role-based access controls — no system is completely secure. By using the Platform, you acknowledge and agree that:
+            </p>
+            <ul className="list-disc list-inside text-slate-600 space-y-2 leading-relaxed">
+              <li>Smart Hire is not responsible for any loss, corruption, or destruction of data resulting from technical failures, third-party service outages, or circumstances beyond our reasonable control.</li>
+              <li>Smart Hire is not liable for any unauthorised access to or disclosure of your data resulting from a security breach, cyberattack, or vulnerability in third-party infrastructure (including but not limited to Supabase, Vercel, or Clerk).</li>
+              <li>In the event of a data breach affecting your personal information, Smart Hire will make reasonable efforts to notify affected users in a timely manner, but accepts no financial liability for losses resulting from such an incident.</li>
+              <li>You are responsible for maintaining the security of your account credentials. Smart Hire is not liable for any breach or data loss resulting from unauthorised access to your account caused by your own negligence.</li>
+              <li>Smart Hire does not guarantee the permanent availability or integrity of any data stored on the Platform. You are encouraged to retain copies of important documents (such as your resume) independently.</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2 className="text-xl font-bold text-slate-900 mb-3">11. Termination</h2>
             <p className="text-slate-600 leading-relaxed">
               We reserve the right to suspend or terminate your account at our discretion if you violate these Terms of Service or engage in conduct harmful to the Platform or other users. You may also delete your account at any time by contacting us.
             </p>
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-slate-900 mb-3">11. Changes to These Terms</h2>
+            <h2 className="text-xl font-bold text-slate-900 mb-3">12. Changes to These Terms</h2>
             <p className="text-slate-600 leading-relaxed">
               We may update these Terms of Service from time to time. We will notify users of material changes by updating the &ldquo;Last updated&rdquo; date. Your continued use of the Platform after changes take effect constitutes acceptance of the revised terms.
             </p>
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-slate-900 mb-3">12. Governing Law</h2>
+            <h2 className="text-xl font-bold text-slate-900 mb-3">13. Governing Law</h2>
             <p className="text-slate-600 leading-relaxed">
               These Terms are governed by the laws of Pakistan. Any disputes arising from your use of the Platform shall be subject to the jurisdiction of the courts of Lahore, Pakistan.
             </p>
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-slate-900 mb-3">13. Contact Us</h2>
+            <h2 className="text-xl font-bold text-slate-900 mb-3">14. Contact Us</h2>
             <p className="text-slate-600 leading-relaxed">
               If you have any questions about these Terms of Service, please contact us at:<br />
               Khizar Qamar<br />
