@@ -237,7 +237,7 @@ export async function sendStatusEmail(params: StatusEmailParams) {
 
     await resend.emails.send({
         from: 'SmartHire <noreply@smarthire.website>',
-        reply_to: 'info@smarthire.website',
+        replyTo: 'info@smarthire.website',
         to,
         subject: subjects[status](jobTitle),
         html: htmlMap[status],
