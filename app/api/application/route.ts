@@ -311,7 +311,7 @@ export async function PATCH(request: Request) {
         const { userId } = authResult;
 
         const body = await request.json();
-        const { applicationId, status, feedback } = body;
+        const { applicationId, status, feedback, interviewDate, interviewTime } = body;
 
         if (!applicationId || !status) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -337,6 +337,10 @@ export async function PATCH(request: Request) {
         const updateData: any = { status };
         if (status === 'rejected' && feedback) {
             updateData.rejection_feedback = feedback;
+        }
+        if (status === 'shortlisted' && interviewDate && interviewTime) {
+            updateData.interview_date = interviewDate;
+            updateData.interview_time = interviewTime;
         }
 
         const { data, error } = await supabase
@@ -364,6 +368,8 @@ export async function PATCH(request: Request) {
                     companyName: appData.jobs.company_name,
                     status,
                     feedback: feedback ?? undefined,
+                    interviewDate: interviewDate ?? undefined,
+                    interviewTime: interviewTime ?? undefined,
                 });
             } catch (emailError) {
                 console.error('Failed to send status email:', emailError);

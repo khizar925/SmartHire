@@ -34,12 +34,11 @@ interface NavLink {
 }
 
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
-    role: 'candidate' | 'recruiter'; // Changed to required
-    onOpenProfile: () => void; // Changed to required
-    onOpenScore: () => void; // Added
+    role: 'candidate' | 'recruiter';
+    onOpenScore: () => void;
 }
 
-export function AppSidebar({ role, onOpenProfile, onOpenScore, ...props }: AppSidebarProps) {
+export function AppSidebar({ role, onOpenScore, ...props }: AppSidebarProps) {
     const pathname = usePathname();
     const { setOpenMobile } = useSidebar(); // Added
 
@@ -57,14 +56,7 @@ export function AppSidebar({ role, onOpenProfile, onOpenScore, ...props }: AppSi
                 onOpenScore();
             }
         },
-        {
-            label: 'Manage Profile',
-            icon: User,
-            onClick: () => {
-                setOpenMobile(false); // Added
-                onOpenProfile();
-            }
-        },
+        { label: 'My Profile', icon: User, href: '/dashboard/profile' },
     ];
 
     // Removed the old `links` assignment

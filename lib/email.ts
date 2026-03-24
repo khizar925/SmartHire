@@ -9,6 +9,8 @@ interface StatusEmailParams {
     companyName: string;
     status: 'accepted' | 'rejected' | 'shortlisted';
     feedback?: string;
+    interviewDate?: string;
+    interviewTime?: string;
 }
 
 // ── Shared layout wrapper ────────────────────────────────────────────────────
@@ -102,16 +104,76 @@ function bodyText(text: string): string {
 
 // ── Templates ────────────────────────────────────────────────────────────────
 
-function shortlistedHtml(candidateName: string, jobTitle: string, companyName: string): string {
+function formatInterviewDate(dateStr: string): string {
+    const [year, month, day] = dateStr.split('-').map(Number);
+    return new Date(year, month - 1, day).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+}
+
+function formatInterviewTime(timeStr: string): string {
+    const [h, m] = timeStr.split(':').map(Number);
+    const ampm = h < 12 ? 'AM' : 'PM';
+    const hour = h % 12 || 12;
+    return `${hour}:${m.toString().padStart(2, '0')} ${ampm}`;
+}
+
+function buildGoogleCalendarUrl(title: string, date: string, time: string, description: string): string {
+    const [y, mo, d] = date.split('-');
+    const [h, mi] = time.split(':');
+    const endHour = String(parseInt(h) + 1).padStart(2, '0');
+    const params = new URLSearchParams({
+        action: 'TEMPLATE',
+        text: title,
+        dates: `${y}${mo}${d}T${h}${mi}00/${y}${mo}${d}T${endHour}${mi}00`,
+        details: description,
+    });
+    return `https://calendar.google.com/calendar/render?${params.toString()}`;
+}
+
+function shortlistedHtml(candidateName: string, jobTitle: string, companyName: string, interviewDate?: string, interviewTime?: string): string {
     const accent = '#0ea5e9';
     const icon = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>`;
     const badge = `You've Been Shortlisted`;
+
+    const calUrl = (interviewDate && interviewTime)
+        ? buildGoogleCalendarUrl(
+            `Interview: ${jobTitle} at ${companyName}`,
+            interviewDate,
+            interviewTime,
+            `Interview for the ${jobTitle} position at ${companyName}. Scheduled via SmartHire.`,
+          )
+        : null;
+
+    const interviewBlock = (interviewDate && interviewTime) ? `
+        <table cellpadding="0" cellspacing="0" width="100%" style="margin:0 0 24px;">
+          <tr>
+            <td style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:20px;">
+              <p style="margin:0 0 12px;font-size:12px;font-weight:700;color:#0369a1;text-transform:uppercase;letter-spacing:0.5px;">📅 Interview Scheduled</p>
+              ${infoBox('Date', formatInterviewDate(interviewDate), accent)}
+              ${infoBox('Time', formatInterviewTime(interviewTime), accent)}
+              <table cellpadding="0" cellspacing="0" width="100%" style="margin-top:16px;">
+                <tr>
+                  <td align="center">
+                    <a href="${calUrl}" target="_blank" rel="noopener noreferrer"
+                      style="display:inline-flex;align-items:center;gap:8px;background:#4285F4;color:#ffffff;text-decoration:none;font-size:13px;font-weight:700;padding:10px 20px;border-radius:8px;letter-spacing:0.3px;">
+                      📆 Add to Google Calendar
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>` : '';
+
+    const nextStepsText = (interviewDate && interviewTime)
+        ? `Please make sure you are available at the scheduled time. If you have any questions, reach out to the hiring team directly.`
+        : `The recruiter will be in touch soon with the next steps. Make sure to keep an eye on your inbox.`;
     const body = `
         ${greeting(candidateName)}
         ${bodyText(`Great news — you've been shortlisted for the position below. The hiring team has reviewed your application and wants to move forward with you.`)}
         ${infoBox('Position', jobTitle, accent)}
         ${infoBox('Company', companyName, accent)}
-        ${bodyText(`The recruiter will be in touch soon with the next steps. Make sure to keep an eye on your inbox.`)}
+        ${interviewBlock}
+        ${bodyText(nextStepsText)}
         <p style="margin:0;font-size:15px;color:#475569;line-height:1.7;">Best of luck, and congratulations on making it this far! 🎉</p>`;
     return layout(accent, icon, `${badge}|||BADGE|||${body}`);
 }
@@ -165,16 +227,17 @@ const subjects: Record<StatusEmailParams['status'], (jobTitle: string) => string
 // ── Export ───────────────────────────────────────────────────────────────────
 
 export async function sendStatusEmail(params: StatusEmailParams) {
-    const { to, candidateName, jobTitle, companyName, status, feedback } = params;
+    const { to, candidateName, jobTitle, companyName, status, feedback, interviewDate, interviewTime } = params;
 
     const htmlMap: Record<StatusEmailParams['status'], string> = {
-        shortlisted: shortlistedHtml(candidateName, jobTitle, companyName),
+        shortlisted: shortlistedHtml(candidateName, jobTitle, companyName, interviewDate, interviewTime),
         accepted:    acceptedHtml(candidateName, jobTitle, companyName),
         rejected:    rejectedHtml(candidateName, jobTitle, companyName, feedback),
     };
 
     await resend.emails.send({
         from: 'SmartHire <noreply@smarthire.website>',
+        reply_to: 'info@smarthire.website',
         to,
         subject: subjects[status](jobTitle),
         html: htmlMap[status],

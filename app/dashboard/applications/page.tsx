@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import {
     ClipboardList, Loader2, AlertCircle, FileText,
@@ -17,23 +17,7 @@ import {
     PaginationNext,
     PaginationPrevious,
 } from '@/components/ui/pagination';
-
-interface ApplicationJob {
-    job_title: string;
-    company_name: string;
-    job_location: string;
-    employment_type: string;
-    status: string;
-}
-
-interface Application {
-    id: string;
-    status: string;
-    rejection_feedback: string | null;
-    created_at: string;
-    resume_url: string;
-    jobs: ApplicationJob | null;
-}
+import { useCandidateApplications } from '@/lib/queries/candidate';
 
 const STATUS_STYLES: Record<string, string> = {
     pending:     'bg-amber-50 text-amber-700 border-amber-200',
@@ -57,31 +41,10 @@ function formatDate(iso: string) {
 const ITEMS_PER_PAGE = 10;
 
 export default function MyApplicationsPage() {
-    const [applications, setApplications] = useState<Application[]>([]);
-    const [isLoading, setIsLoading]       = useState(true);
-    const [error, setError]               = useState<string | null>(null);
     const [currentPage, setCurrentPage]   = useState(1);
     const [expandedFeedback, setExpandedFeedback] = useState<Set<string>>(new Set());
 
-    const fetchApplications = async () => {
-        setIsLoading(true);
-        setError(null);
-        try {
-            const res = await fetch('/api/candidate/applications');
-            const data = await res.json();
-            if (!res.ok) {
-                setError(data.error || 'Failed to load applications');
-            } else {
-                setApplications(data.applications || []);
-            }
-        } catch {
-            setError('An error occurred while fetching your applications');
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    useEffect(() => { fetchApplications(); }, []);
+    const { data: applications = [], isLoading, error, refetch } = useCandidateApplications();
 
     const toggleFeedback = (id: string) => {
         setExpandedFeedback(prev => {
@@ -128,8 +91,8 @@ export default function MyApplicationsPage() {
                     <div className="bg-red-50 border border-red-200 p-8 rounded-2xl text-center">
                         <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
                         <h3 className="text-lg font-bold text-red-900 mb-2">Unable to Load</h3>
-                        <p className="text-red-700 mb-6">{error}</p>
-                        <Button onClick={fetchApplications} variant="outline" className="bg-white">
+                        <p className="text-red-700 mb-6">{(error as Error).message || 'Failed to load applications'}</p>
+                        <Button onClick={() => refetch()} variant="outline" className="bg-white">
                             Retry
                         </Button>
                     </div>
@@ -204,9 +167,9 @@ export default function MyApplicationsPage() {
                                                 </p>
                                             </div>
 
-                                            {/* Right: score + status + resume */}
+                                            {/* Right: status + resume */}
                                             <div className="flex items-center gap-3 flex-shrink-0">
-    
+
                                                 {/* Status badge */}
                                                 <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold border uppercase tracking-wider ${STATUS_STYLES[app.status] ?? 'bg-slate-100 text-slate-600 border-slate-200'}`}>
                                                     {app.status}

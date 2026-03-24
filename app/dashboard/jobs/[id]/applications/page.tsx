@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import {
     ArrowLeft, Users, GraduationCap,
     Award, FileText, Loader2, AlertCircle,
-    User, CheckCircle, XCircle, Search, Filter, ArrowUpDown, Briefcase, RefreshCw
+    User, CheckCircle, XCircle, Search, Filter, ArrowUpDown, Briefcase, RefreshCw,
+    Calendar, Clock, ThumbsUp, ThumbsDown
 } from 'lucide-react';
 import { Button } from '@/components/Button';
 import {
@@ -15,6 +16,28 @@ import {
 import { useApplications, type Application } from '@/lib/queries/applications';
 import { useRecruiterJobs } from '@/lib/queries/jobs';
 import { useUpdateApplicationStatus } from '@/lib/mutations/applications';
+
+// Pure frontend — no dependencies, no API calls
+function buildGoogleCalendarUrl(
+    candidateName: string,
+    jobTitle: string,
+    companyName: string,
+    date: string, // YYYY-MM-DD
+    time: string, // HH:MM
+): string {
+    const [y, mo, d] = date.split('-');
+    const [h, mi] = time.split(':');
+    const endHour = String(parseInt(h) + 1).padStart(2, '0');
+    // Timed event format (local, no Z — Google Calendar uses the user's calendar timezone)
+    const params = new URLSearchParams({
+        action: 'TEMPLATE',
+        text: `Interview: ${candidateName} — ${jobTitle} at ${companyName}`,
+        dates: `${y}${mo}${d}T${h}${mi}00/${y}${mo}${d}T${endHour}${mi}00`,
+        details: `Interview with ${candidateName} for the ${jobTitle} position at ${companyName}.\n\nScheduled via SmartHire.`,
+        location: companyName,
+    });
+    return `https://calendar.google.com/calendar/render?${params.toString()}`;
+}
 
 export default function JobApplicationsPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
@@ -52,6 +75,25 @@ export default function JobApplicationsPage({ params }: { params: Promise<{ id: 
     const [rejectionReason, setRejectionReason] = useState('');
     const [rejectionError, setRejectionError]   = useState<string | null>(null);
 
+    // Interview scheduling modal
+    const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
+    const [scheduleAppId, setScheduleAppId] = useState<string | null>(null);
+    const [interviewDate, setInterviewDate] = useState('');
+    const [interviewTime, setInterviewTime] = useState('');
+    const [scheduleError, setScheduleError] = useState<string | null>(null);
+    const [confirmedCalUrl, setConfirmedCalUrl] = useState<string | null>(null);
+
+    const TIME_SLOTS = [
+        '09:00','09:30','10:00','10:30','11:00','11:30',
+        '12:00','12:30','13:00','13:30','14:00','14:30',
+        '15:00','15:30','16:00','16:30','17:00','17:30','18:00',
+    ];
+    const formatTime = (t: string) => {
+        const [h, m] = t.split(':').map(Number);
+        return `${h % 12 || 12}:${m.toString().padStart(2,'0')} ${h < 12 ? 'AM' : 'PM'}`;
+    };
+    const today = new Date().toISOString().split('T')[0];
+
     // Filter / sort
     const [searchQuery,     setSearchQuery]     = useState('');
     const [educationFilter, setEducationFilter] = useState<string>('all');
@@ -72,9 +114,9 @@ export default function JobApplicationsPage({ params }: { params: Promise<{ id: 
     const job = jobs.find(j => j.id === id) ?? null;
 
     // ── Status update ─────────────────────────────────────────────────────────
-    const handleUpdateStatus = async (applicationId: string, status: string, feedback?: string) => {
+    const handleUpdateStatus = async (applicationId: string, status: string, feedback?: string, interviewDate?: string, interviewTime?: string) => {
         try {
-            await updateStatus.mutateAsync({ applicationId, status, feedback });
+            await updateStatus.mutateAsync({ applicationId, status, feedback, interviewDate, interviewTime });
             return true;
         } catch {
             alert('Failed to update status');
@@ -94,6 +136,35 @@ export default function JobApplicationsPage({ params }: { params: Promise<{ id: 
         if (selectedAppId) {
             const ok = await handleUpdateStatus(selectedAppId, 'rejected', rejectionReason);
             if (ok) { setIsRejectionModalOpen(false); setSelectedAppId(null); }
+        }
+    };
+
+    const handleShortlistClick = (applicationId: string) => {
+        setScheduleAppId(applicationId);
+        setInterviewDate('');
+        setInterviewTime('');
+        setScheduleError(null);
+        setConfirmedCalUrl(null);
+        setIsScheduleModalOpen(true);
+    };
+
+    const handleConfirmSchedule = async () => {
+        if (!interviewDate) { setScheduleError('Please select an interview date.'); return; }
+        if (!interviewTime) { setScheduleError('Please select a time slot.'); return; }
+        if (scheduleAppId) {
+            const ok = await handleUpdateStatus(scheduleAppId, 'shortlisted', undefined, interviewDate, interviewTime);
+            if (ok) {
+                const app = applications.find(a => a.id === scheduleAppId);
+                const calUrl = buildGoogleCalendarUrl(
+                    app?.full_name ?? 'Candidate',
+                    job?.job_title ?? 'Interview',
+                    job?.company_name ?? '',
+                    interviewDate,
+                    interviewTime,
+                );
+                setConfirmedCalUrl(calUrl);
+                // Stay in modal — show calendar step
+            }
         }
     };
 
@@ -292,7 +363,12 @@ export default function JobApplicationsPage({ params }: { params: Promise<{ id: 
                                                         </div>
                                                     </td>
                                                     <td className="px-6 py-4">
-                                                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold border uppercase tracking-wider ${app.status === 'shortlisted' ? 'bg-green-50 text-green-700 border-green-100' : app.status === 'rejected' ? 'bg-red-50 text-red-700 border-red-100' : 'bg-blue-50 text-blue-700 border-blue-100'}`}>
+                                                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold border uppercase tracking-wider ${
+                                                            app.status === 'shortlisted' ? 'bg-sky-50 text-sky-700 border-sky-100' :
+                                                            app.status === 'rejected' ? 'bg-red-50 text-red-700 border-red-100' :
+                                                            app.status === 'hired' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
+                                                            'bg-blue-50 text-blue-700 border-blue-100'
+                                                        }`}>
                                                             {app.status}
                                                         </span>
                                                     </td>
@@ -354,13 +430,25 @@ export default function JobApplicationsPage({ params }: { params: Promise<{ id: 
                                                             </a>
                                                             {app.status === 'pending' && (
                                                                 <>
-                                                                    <button onClick={() => handleUpdateStatus(app.id, 'shortlisted')} disabled={isUpdating} title="Shortlist"
-                                                                        className="p-2 bg-green-100 text-green-600 rounded-lg hover:bg-green-200 transition-colors disabled:opacity-50">
-                                                                        {isUpdating ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}
+                                                                    <button onClick={() => handleShortlistClick(app.id)} disabled={isUpdating} title="Shortlist & Schedule Interview"
+                                                                        className="p-2 bg-sky-100 text-sky-600 rounded-lg hover:bg-sky-200 transition-colors disabled:opacity-50">
+                                                                        {isUpdating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Calendar className="h-4 w-4" />}
                                                                     </button>
                                                                     <button onClick={() => handleRejectClick(app.id)} disabled={isUpdating} title="Reject"
                                                                         className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors disabled:opacity-50">
                                                                         <XCircle className="h-4 w-4" />
+                                                                    </button>
+                                                                </>
+                                                            )}
+                                                            {app.status === 'shortlisted' && (
+                                                                <>
+                                                                    <button onClick={() => handleUpdateStatus(app.id, 'hired')} disabled={isUpdating} title="Mark as Hired"
+                                                                        className="p-2 bg-emerald-100 text-emerald-600 rounded-lg hover:bg-emerald-200 transition-colors disabled:opacity-50">
+                                                                        {isUpdating ? <Loader2 className="h-4 w-4 animate-spin" /> : <ThumbsUp className="h-4 w-4" />}
+                                                                    </button>
+                                                                    <button onClick={() => handleRejectClick(app.id)} disabled={isUpdating} title="Reject"
+                                                                        className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors disabled:opacity-50">
+                                                                        <ThumbsDown className="h-4 w-4" />
                                                                     </button>
                                                                 </>
                                                             )}
@@ -417,6 +505,100 @@ export default function JobApplicationsPage({ params }: { params: Promise<{ id: 
                     </>
                 )}
             </div>
+
+            {/* Interview Scheduling Modal */}
+            {isScheduleModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => { setIsScheduleModalOpen(false); setConfirmedCalUrl(null); }} />
+                    <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 overflow-hidden">
+
+                        {confirmedCalUrl ? (
+                            /* ── Calendar step ── */
+                            <div className="flex flex-col items-center text-center gap-5">
+                                <div className="p-4 bg-emerald-100 text-emerald-600 rounded-full">
+                                    <CheckCircle className="h-8 w-8" />
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-bold text-slate-900">Interview Scheduled!</h3>
+                                    <p className="text-sm text-slate-500 mt-1">Candidate notified by email. Add this to your calendar:</p>
+                                </div>
+                                <a
+                                    href={confirmedCalUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    onClick={e => e.stopPropagation()}
+                                    className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-white border-2 border-slate-200 rounded-xl hover:border-sky-400 hover:bg-sky-50 transition-all text-sm font-semibold text-slate-700 hover:text-sky-700"
+                                >
+                                    <svg className="h-5 w-5 flex-shrink-0" viewBox="0 0 24 24" fill="none">
+                                        <rect width="24" height="24" rx="4" fill="#4285F4"/>
+                                        <rect x="3" y="3" width="18" height="18" rx="2" fill="white"/>
+                                        <path d="M17 3H7a4 4 0 00-4 4v10a4 4 0 004 4h10a4 4 0 004-4V7a4 4 0 00-4-4z" stroke="#4285F4" strokeWidth="0.5" fill="white"/>
+                                        <text x="12" y="16" textAnchor="middle" fontSize="9" fontWeight="bold" fill="#4285F4">CAL</text>
+                                    </svg>
+                                    Add to Google Calendar
+                                </a>
+                                <Button
+                                    variant="primary"
+                                    className="w-full"
+                                    onClick={() => { setIsScheduleModalOpen(false); setConfirmedCalUrl(null); setScheduleAppId(null); }}
+                                >
+                                    Done
+                                </Button>
+                            </div>
+                        ) : (
+                            /* ── Scheduling form ── */
+                            <>
+                                <div className="flex items-center gap-3 mb-6">
+                                    <div className="p-2.5 bg-sky-100 text-sky-600 rounded-xl">
+                                        <Calendar className="h-5 w-5" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-xl font-bold text-slate-900">Schedule Interview</h3>
+                                        <p className="text-sm text-slate-500">Candidate will be notified by email</p>
+                                    </div>
+                                </div>
+                                <div className="space-y-4">
+                                    <div className="space-y-1.5">
+                                        <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                                            <Calendar className="h-4 w-4 text-slate-400" /> Interview Date
+                                        </label>
+                                        <input
+                                            type="date"
+                                            value={interviewDate}
+                                            min={today}
+                                            onChange={e => { setInterviewDate(e.target.value); setScheduleError(null); }}
+                                            className="w-full h-11 px-4 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                                        />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                                            <Clock className="h-4 w-4 text-slate-400" /> Time Slot
+                                        </label>
+                                        <div className="grid grid-cols-4 gap-2 max-h-48 overflow-y-auto pr-1">
+                                            {TIME_SLOTS.map(slot => (
+                                                <button
+                                                    key={slot}
+                                                    onClick={() => { setInterviewTime(slot); setScheduleError(null); }}
+                                                    className={`py-2 px-1 rounded-lg text-xs font-semibold border transition-all ${interviewTime === slot ? 'border-sky-500 bg-sky-50 text-sky-700' : 'border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50'}`}
+                                                >
+                                                    {formatTime(slot)}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    {scheduleError && <p className="text-sm text-red-600 font-medium">{scheduleError}</p>}
+                                    <div className="flex gap-3 pt-2">
+                                        <Button variant="outline" className="flex-1" onClick={() => setIsScheduleModalOpen(false)}>Cancel</Button>
+                                        <Button variant="primary" className="flex-1" onClick={handleConfirmSchedule} disabled={updateStatus.isPending}>
+                                            {updateStatus.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Shortlist & Send Invite'}
+                                        </Button>
+                                    </div>
+                                </div>
+                            </>
+                        )}
+                    </div>
+                </div>
+            )}
 
             {/* Rejection Modal */}
             {isRejectionModalOpen && (

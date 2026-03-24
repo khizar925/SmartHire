@@ -1,24 +1,30 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, User, Mail, Phone, MapPin, GraduationCap, Briefcase, Loader2, Save, CheckCircle } from 'lucide-react';
+import {
+    User, Mail, Phone, MapPin, GraduationCap,
+    Briefcase, Loader2, Save, CheckCircle, AlertCircle,
+} from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/query-keys';
-import { Button } from './Button';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Button } from '@/components/Button';
 
-interface CandidateProfileModalProps {
-    isOpen: boolean;
-    onClose: () => void;
+interface FormData {
+    fullName: string;
+    email: string;
+    phone: string;
+    address: string;
+    educationLevel: string;
+    yearsOfExperience: string;
 }
 
-export function CandidateProfileModal({ isOpen, onClose }: CandidateProfileModalProps) {
+export default function ProfilePage() {
     const qc = useQueryClient();
     const [isLoading, setIsLoading] = useState(true);
-    const [isSaving, setIsSaving] = useState(false);
-    const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+    const [isSaving, setIsSaving]   = useState(false);
+    const [message, setMessage]     = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-    const [formData, setFormData] = useState({
+    const [formData, setFormData] = useState<FormData>({
         fullName: '',
         email: '',
         phone: '',
@@ -28,34 +34,30 @@ export function CandidateProfileModal({ isOpen, onClose }: CandidateProfileModal
     });
 
     useEffect(() => {
-        if (isOpen) {
-            fetchProfile();
-        }
-    }, [isOpen]);
-
-    const fetchProfile = async () => {
-        setIsLoading(true);
-        try {
-            const response = await fetch('/api/candidate/profile');
-            if (response.ok) {
-                const data = await response.json();
-                if (data) {
-                    setFormData({
-                        fullName: data.full_name || '',
-                        email: data.email || '',
-                        phone: data.phone || '',
-                        address: data.address || '',
-                        educationLevel: data.education_level || '',
-                        yearsOfExperience: data.years_of_experience?.toString() || '',
-                    });
+        const load = async () => {
+            try {
+                const res = await fetch('/api/candidate/profile');
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data) {
+                        setFormData({
+                            fullName:          data.full_name ?? '',
+                            email:             data.email ?? '',
+                            phone:             data.phone ?? '',
+                            address:           data.address ?? '',
+                            educationLevel:    data.education_level ?? '',
+                            yearsOfExperience: data.years_of_experience?.toString() ?? '',
+                        });
+                    }
                 }
+            } catch (err) {
+                console.error('Error loading profile:', err);
+            } finally {
+                setIsLoading(false);
             }
-        } catch (error) {
-            console.error('Error fetching profile:', error);
-        } finally {
-            setIsLoading(false);
-        }
-    };
+        };
+        load();
+    }, []);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
@@ -66,76 +68,57 @@ export function CandidateProfileModal({ isOpen, onClose }: CandidateProfileModal
         e.preventDefault();
         setIsSaving(true);
         setMessage(null);
-
         try {
-            const response = await fetch('/api/candidate/profile', {
+            const res = await fetch('/api/candidate/profile', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     ...formData,
                     yearsOfExperience: formData.yearsOfExperience ? parseFloat(formData.yearsOfExperience) : null,
                 }),
             });
-
-            if (response.ok) {
-                setMessage({ type: 'success', text: 'Profile updated successfully!' });
+            if (res.ok) {
+                setMessage({ type: 'success', text: 'Profile saved successfully!' });
                 qc.invalidateQueries({ queryKey: queryKeys.candidateProfile() });
-                setTimeout(() => {
-                    onClose();
-                    setMessage(null);
-                }, 1500);
             } else {
-                const errorData = await response.json();
-                setMessage({ type: 'error', text: errorData.error || 'Failed to update profile' });
+                const err = await res.json();
+                setMessage({ type: 'error', text: err.error || 'Failed to save profile' });
             }
-        } catch (error) {
+        } catch {
             setMessage({ type: 'error', text: 'An unexpected error occurred' });
         } finally {
             setIsSaving(false);
         }
     };
 
-    if (!isOpen) return null;
-
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-            <motion.div
-                initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col"
-            >
+        <div className="min-h-screen bg-slate-50 p-2 md:p-3">
+            <div className="max-w-2xl mx-auto">
+
                 {/* Header */}
-                <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-white">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 bg-primary-50 rounded-lg">
-                            <User className="h-6 w-6 text-primary-600" />
+                <div className="mb-8">
+                    <div className="flex items-center gap-3 mb-2">
+                        <div className="h-10 w-10 rounded-xl bg-primary-50 flex items-center justify-center">
+                            <User className="h-5 w-5 text-primary-600" />
                         </div>
-                        <div>
-                            <h2 className="text-xl font-bold text-slate-900">My Profile</h2>
-                            <p className="text-sm text-slate-500">Update your details for auto-filling applications</p>
-                        </div>
+                        <h1 className="text-3xl font-bold text-slate-900">My Profile</h1>
                     </div>
-                    <button
-                        onClick={onClose}
-                        className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400 hover:text-slate-600"
-                    >
-                        <X className="h-6 w-6" />
-                    </button>
+                    <p className="text-slate-500 text-sm ml-[52px]">
+                        Keep your details up to date — they auto-fill when you apply for jobs.
+                    </p>
                 </div>
 
-                {/* Content */}
-                <div className="flex-1 overflow-y-auto p-6">
+                {/* Card */}
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                     {isLoading ? (
-                        <div className="flex flex-col items-center justify-center py-20 gap-4">
+                        <div className="flex flex-col items-center justify-center py-24 gap-4">
                             <Loader2 className="h-10 w-10 animate-spin text-primary-600" />
                             <p className="text-slate-500 font-medium">Loading your profile...</p>
                         </div>
                     ) : (
-                        <form id="profile-form" onSubmit={handleSubmit} className="space-y-6">
+                        <form id="profile-form" onSubmit={handleSubmit} className="p-6 md:p-8">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
                                 {/* Full Name */}
                                 <div className="space-y-2">
                                     <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
@@ -147,7 +130,7 @@ export function CandidateProfileModal({ isOpen, onClose }: CandidateProfileModal
                                         value={formData.fullName}
                                         onChange={handleChange}
                                         required
-                                        className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all"
+                                        className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all text-sm"
                                         placeholder="John Doe"
                                     />
                                 </div>
@@ -155,7 +138,7 @@ export function CandidateProfileModal({ isOpen, onClose }: CandidateProfileModal
                                 {/* Email */}
                                 <div className="space-y-2">
                                     <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                                        <Mail className="h-4 w-4" /> Email address
+                                        <Mail className="h-4 w-4" /> Email Address
                                     </label>
                                     <input
                                         type="email"
@@ -163,7 +146,7 @@ export function CandidateProfileModal({ isOpen, onClose }: CandidateProfileModal
                                         value={formData.email}
                                         onChange={handleChange}
                                         required
-                                        className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all"
+                                        className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all text-sm"
                                         placeholder="john@example.com"
                                     />
                                 </div>
@@ -178,7 +161,7 @@ export function CandidateProfileModal({ isOpen, onClose }: CandidateProfileModal
                                         name="phone"
                                         value={formData.phone}
                                         onChange={handleChange}
-                                        className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all"
+                                        className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all text-sm"
                                         placeholder="+1 (555) 000-0000"
                                     />
                                 </div>
@@ -195,7 +178,7 @@ export function CandidateProfileModal({ isOpen, onClose }: CandidateProfileModal
                                         onChange={handleChange}
                                         step="0.5"
                                         min="0"
-                                        className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all"
+                                        className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all text-sm"
                                         placeholder="5"
                                     />
                                 </div>
@@ -209,9 +192,9 @@ export function CandidateProfileModal({ isOpen, onClose }: CandidateProfileModal
                                         name="educationLevel"
                                         value={formData.educationLevel}
                                         onChange={handleChange}
-                                        className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all bg-white"
+                                        className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all text-sm bg-white"
                                     >
-                                        <option value="">Select Level</option>
+                                        <option value="">Select level</option>
                                         <option value="bachelors">Bachelor's Degree</option>
                                         <option value="master">Master's Degree</option>
                                         <option value="phd">PhD</option>
@@ -230,53 +213,50 @@ export function CandidateProfileModal({ isOpen, onClose }: CandidateProfileModal
                                         value={formData.address}
                                         onChange={handleChange}
                                         rows={2}
-                                        className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all resize-none"
+                                        className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all text-sm resize-none"
                                         placeholder="123 Main St, City, Country"
                                     />
                                 </div>
                             </div>
 
                             {message && (
-                                <div className={`p-4 rounded-xl flex items-center gap-3 ${message.type === 'success' ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-red-50 text-red-700 border border-red-100'
-                                    }`}>
-                                    {message.type === 'success' ? <CheckCircle className="h-5 w-5" /> : <X className="h-5 w-5" />}
+                                <div className={`mt-6 p-4 rounded-xl flex items-center gap-3 ${
+                                    message.type === 'success'
+                                        ? 'bg-green-50 text-green-700 border border-green-100'
+                                        : 'bg-red-50 text-red-700 border border-red-100'
+                                }`}>
+                                    {message.type === 'success'
+                                        ? <CheckCircle className="h-5 w-5 flex-shrink-0" />
+                                        : <AlertCircle className="h-5 w-5 flex-shrink-0" />
+                                    }
                                     <p className="text-sm font-medium">{message.text}</p>
                                 </div>
                             )}
+
+                            <div className="mt-8 flex justify-end">
+                                <Button
+                                    variant="primary"
+                                    type="submit"
+                                    disabled={isSaving}
+                                    className="min-w-[140px]"
+                                >
+                                    {isSaving ? (
+                                        <>
+                                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                                            Saving...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Save className="h-4 w-4 mr-2" />
+                                            Save Profile
+                                        </>
+                                    )}
+                                </Button>
+                            </div>
                         </form>
                     )}
                 </div>
-
-                {/* Footer */}
-                <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
-                    <Button
-                        variant="secondary"
-                        onClick={onClose}
-                        disabled={isSaving}
-                    >
-                        Cancel
-                    </Button>
-                    <Button
-                        variant="primary"
-                        type="submit"
-                        form="profile-form"
-                        disabled={isSaving || isLoading}
-                        className="min-w-[120px]"
-                    >
-                        {isSaving ? (
-                            <>
-                                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                                Saving...
-                            </>
-                        ) : (
-                            <>
-                                <Save className="h-4 w-4 mr-2" />
-                                Save Profile
-                            </>
-                        )}
-                    </Button>
-                </div>
-            </motion.div>
+            </div>
         </div>
     );
 }

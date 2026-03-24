@@ -13,6 +13,8 @@ export function CandidateDashboard(_props: { firstName?: string }) {
   const [page, setPage] = useState(1);
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
+  const [employmentType, setEmploymentType] = useState('');
+  const [experienceLevel, setExperienceLevel] = useState('');
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const publicLink = process.env.NEXT_PUBLIC_APP_URL || (typeof window !== 'undefined' ? window.location.origin : '');
   const limit = 12;
@@ -27,7 +29,16 @@ export function CandidateDashboard(_props: { firstName?: string }) {
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
   }, [searchInput]);
 
-  const { data, isLoading, error, refetch } = usePublicJobs(page, search);
+  const hasActiveFilters = !!search || !!employmentType || !!experienceLevel;
+
+  const clearAllFilters = () => {
+    setSearchInput('');
+    setEmploymentType('');
+    setExperienceLevel('');
+    setPage(1);
+  };
+
+  const { data, isLoading, error, refetch } = usePublicJobs(page, search, employmentType, experienceLevel);
 
   const jobs       = data?.jobs       ?? [];
   const total      = data?.total      ?? 0;
@@ -59,23 +70,56 @@ export function CandidateDashboard(_props: { firstName?: string }) {
           )}
         </div>
 
-        {/* Search bar */}
-        <div className="relative mb-6">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-          <input
-            type="text"
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            placeholder="Search by job title, company, or location…"
-            className="w-full pl-10 pr-10 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-          />
-          {searchInput && (
+        {/* Search + Filters */}
+        <div className="flex flex-col sm:flex-row gap-3 mb-6">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+            <input
+              type="text"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              placeholder="Search by job title, company, or location…"
+              className="w-full pl-10 pr-10 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            />
+            {searchInput && (
+              <button
+                onClick={() => setSearchInput('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                aria-label="Clear search"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+
+          <select
+            value={employmentType}
+            onChange={(e) => { setEmploymentType(e.target.value); setPage(1); }}
+            className="py-2.5 px-3 border border-slate-200 rounded-lg text-sm text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent sm:w-44"
+          >
+            <option value="">All Job Types</option>
+            <option value="full-time">Full-time</option>
+            <option value="part-time">Part-time</option>
+            <option value="contract">Contract</option>
+          </select>
+
+          <select
+            value={experienceLevel}
+            onChange={(e) => { setExperienceLevel(e.target.value); setPage(1); }}
+            className="py-2.5 px-3 border border-slate-200 rounded-lg text-sm text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent sm:w-44"
+          >
+            <option value="">All Levels</option>
+            <option value="entry">Entry Level</option>
+            <option value="mid">Mid Level</option>
+            <option value="senior">Senior Level</option>
+          </select>
+
+          {hasActiveFilters && (
             <button
-              onClick={() => setSearchInput('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-              aria-label="Clear search"
+              onClick={clearAllFilters}
+              className="flex items-center gap-1.5 px-3 py-2.5 text-sm text-slate-600 hover:text-slate-900 border border-slate-200 rounded-lg hover:bg-slate-50 whitespace-nowrap"
             >
-              <X className="h-4 w-4" />
+              <X className="h-3.5 w-3.5" />Clear all
             </button>
           )}
         </div>
@@ -103,10 +147,10 @@ export function CandidateDashboard(_props: { firstName?: string }) {
         {isEmpty && (
           <div className="text-center py-12">
             <Briefcase className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-            {search ? (
+            {hasActiveFilters ? (
               <>
-                <h3 className="text-lg font-semibold text-slate-900 mb-2">No jobs found for "{search}"</h3>
-                <p className="text-slate-600">Try different keywords or <button onClick={() => setSearchInput('')} className="text-primary-600 hover:underline">clear the search</button>.</p>
+                <h3 className="text-lg font-semibold text-slate-900 mb-2">No jobs match your filters</h3>
+                <p className="text-slate-600">Try adjusting your search or <button onClick={clearAllFilters} className="text-primary-600 hover:underline">clear all filters</button>.</p>
               </>
             ) : (
               <>

@@ -1,5 +1,5 @@
-import { auth } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
+import { auth } from '@clerk/nextjs/server';
 import { supabase } from '@/lib/supabase-server';
 
 const pdfParse = require('pdf-parse');
@@ -38,9 +38,10 @@ export async function POST(request: Request) {
         const formData = await request.formData();
         const resume = formData.get('resume') as File | null;
         const jobId = formData.get('jobId') as string | null;
+        const customJd = formData.get('customJd') as string | null;
 
-        if (!resume || !jobId) {
-            return NextResponse.json({ error: 'Missing resume or jobId' }, { status: 400 });
+        if (!resume) {
+            return NextResponse.json({ error: 'Missing resume' }, { status: 400 });
         }
 
         // Validate file size
@@ -60,15 +61,21 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Could not extract text from resume' }, { status: 400 });
         }
 
-        // Fetch job description from Supabase
-        const { data: jobData, error: jobError } = await supabase
-            .from('jobs')
-            .select('job_description')
-            .eq('id', jobId)
-            .single();
+        // Resolve job description
+        let jobDescription = '';
+        if (jobId) {
+            const { data: jobData, error: jobError } = await supabase
+                .from('jobs')
+                .select('job_description')
+                .eq('id', jobId)
+                .single();
 
-        if (jobError || !jobData?.job_description) {
-            return NextResponse.json({ error: 'Job not found' }, { status: 404 });
+            if (jobError || !jobData?.job_description) {
+                return NextResponse.json({ error: 'Job not found' }, { status: 404 });
+            }
+            jobDescription = jobData.job_description;
+        } else if (customJd?.trim()) {
+            jobDescription = customJd.trim();
         }
 
         // Call FastAPI scorer
@@ -92,7 +99,7 @@ export async function POST(request: Request) {
                 },
                 body: JSON.stringify({
                     resume_text: resumeText,
-                    job_description: jobData.job_description,
+                    job_description: jobDescription,
                 }),
                 signal: controller.signal,
             });

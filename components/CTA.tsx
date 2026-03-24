@@ -30,14 +30,15 @@ export const CTA = () => {
                   Get Started Now
                 </Button>
               </Link>
-              <Button
-                size="lg"
-                variant="outline"
-                className="text-white border-white/20 hover:bg-white/10 hover:border-white"
-                onClick={(e) => e.preventDefault()}
-              >
-                Talk to Us
-              </Button>
+              <a href="mailto:contact@smarthire.website">
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="text-white border-white/20 hover:bg-white/10 hover:border-white"
+                >
+                  Talk to Us
+                </Button>
+              </a>
             </div>
           </div>
         </div>

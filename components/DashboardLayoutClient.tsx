@@ -8,7 +8,6 @@ const UserButton = dynamic(
     { ssr: false }
 );
 import { AppSidebar } from '@/components/app-sidebar';
-import { CandidateProfileModal } from '@/components/CandidateProfileModal';
 import { ScoreResumeModal } from '@/components/ScoreResumeModal';
 import { SidebarProvider, SidebarTrigger, SidebarInset } from '@/components/ui/sidebar';
 import { BrainCircuit } from 'lucide-react';
@@ -21,7 +20,6 @@ interface DashboardLayoutClientProps {
 }
 
 export function DashboardLayoutClient({ children, role, firstName }: DashboardLayoutClientProps) {
-    const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
     const [isScoreModalOpen, setIsScoreModalOpen] = useState(false);
 
     if (role === 'recruiter') {
@@ -58,7 +56,6 @@ export function DashboardLayoutClient({ children, role, firstName }: DashboardLa
             <div className="flex min-h-screen w-full bg-slate-50 font-sans">
                 <AppSidebar
                     role={role as 'candidate' | 'recruiter'}
-                    onOpenProfile={() => setIsProfileModalOpen(true)}
                     onOpenScore={() => setIsScoreModalOpen(true)}
                 />
 
@@ -84,11 +81,6 @@ export function DashboardLayoutClient({ children, role, firstName }: DashboardLa
                         </div>
                     </main>
                 </SidebarInset>
-
-                <CandidateProfileModal
-                    isOpen={isProfileModalOpen}
-                    onClose={() => setIsProfileModalOpen(false)}
-                />
 
                 <ScoreResumeModal
                     isOpen={isScoreModalOpen}

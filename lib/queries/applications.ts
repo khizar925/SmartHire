@@ -12,6 +12,8 @@ export interface Application {
   cover_letter: string;
   resume_url: string;
   rejection_feedback?: string;
+  interview_date?: string;
+  interview_time?: string;
   status: string;
   created_at: string;
   scores?: { score: number }[];

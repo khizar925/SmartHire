@@ -32,12 +32,14 @@ export function useRecruiterJobs() {
   });
 }
 
-export function usePublicJobs(page: number, search: string = '') {
+export function usePublicJobs(page: number, search: string = '', employmentType: string = '', experienceLevel: string = '') {
   return useQuery({
-    queryKey: queryKeys.publicJobs(page, search),
+    queryKey: queryKeys.publicJobs(page, search, employmentType, experienceLevel),
     queryFn: () => {
       const params = new URLSearchParams({ page: String(page), limit: '12' });
-      if (search) params.set('search', search);
+      if (search)          params.set('search', search);
+      if (employmentType)  params.set('employment_type', employmentType);
+      if (experienceLevel) params.set('experience_level', experienceLevel);
       return apiFetch<PaginatedJobsResponse>(`/api/jobs/public?${params.toString()}`);
     },
     placeholderData: keepPreviousData,

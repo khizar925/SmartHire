@@ -7,7 +7,9 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
     const limit = Math.min(50, Math.max(1, parseInt(searchParams.get('limit') || '12', 10)));
-    const search = searchParams.get('search')?.trim() || '';
+    const search         = searchParams.get('search')?.trim() || '';
+    const employmentType = searchParams.get('employment_type')?.trim() || '';
+    const experienceLevel = searchParams.get('experience_level')?.trim() || '';
 
     // Calculate offset
     const offset = (page - 1) * limit;
@@ -22,7 +24,9 @@ export async function GET(request: Request) {
       .from('jobs')
       .select('*', { count: 'exact', head: true })
       .eq('status', 'active');
-    if (searchFilter) countQuery = countQuery.or(searchFilter);
+    if (searchFilter)    countQuery = countQuery.or(searchFilter);
+    if (employmentType)  countQuery = countQuery.eq('employment_type', employmentType);
+    if (experienceLevel) countQuery = countQuery.eq('experience_level', experienceLevel);
 
     const { count, error: countError } = await countQuery;
 
@@ -45,7 +49,9 @@ export async function GET(request: Request) {
       .eq('status', 'active')
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
-    if (searchFilter) dataQuery = dataQuery.or(searchFilter);
+    if (searchFilter)    dataQuery = dataQuery.or(searchFilter);
+    if (employmentType)  dataQuery = dataQuery.eq('employment_type', employmentType);
+    if (experienceLevel) dataQuery = dataQuery.eq('experience_level', experienceLevel);
 
     const { data, error } = await dataQuery;
 

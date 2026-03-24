@@ -8,14 +8,17 @@ export function useSubmitApplication(jobId: string) {
   return useMutation({
     mutationFn: (formData: FormData) =>
       apiFetch('/api/application', { method: 'POST', body: formData }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.applicationCheck(jobId) }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.applicationCheck(jobId) });
+      qc.invalidateQueries({ queryKey: queryKeys.candidateApplications() });
+    },
   });
 }
 
 export function useUpdateApplicationStatus(jobId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (payload: { applicationId: string; status: string; feedback?: string }) =>
+    mutationFn: (payload: { applicationId: string; status: string; feedback?: string; interviewDate?: string; interviewTime?: string }) =>
       apiFetch('/api/application', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -27,7 +30,7 @@ export function useUpdateApplicationStatus(jobId: string) {
       qc.setQueryData(queryKeys.applications(jobId), (old: Application[] | undefined) =>
         old?.map(app =>
           app.id === payload.applicationId
-            ? { ...app, status: payload.status, rejection_feedback: payload.feedback }
+            ? { ...app, status: payload.status, rejection_feedback: payload.feedback, interview_date: payload.interviewDate, interview_time: payload.interviewTime }
             : app
         )
       );

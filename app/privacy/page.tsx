@@ -136,8 +136,9 @@ export default function PrivacyPolicy() {
             <h2 className="text-xl font-bold text-slate-900 mb-3">11. Contact Us</h2>
             <p className="text-slate-600 leading-relaxed">
               If you have any questions about this Privacy Policy, please contact us at:<br />
-              <a href="mailto:info@smarthire.website" className="text-primary-600 hover:underline">info@smarthire.website</a><br />
-              Lahore Garrison University, Lahore, Pakistan
+              Khizar Qamar<br />
+              Lahore, Pakistan<br />
+              <a href="mailto:info@smarthire.website" className="text-primary-600 hover:underline">info@smarthire.website</a>
             </p>
           </section>
 
