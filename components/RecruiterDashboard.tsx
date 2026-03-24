@@ -2,7 +2,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Briefcase, Loader2, AlertCircle, MapPin, Clock, Users, Calendar, Plus, Trash2, Pencil } from 'lucide-react';
+import { Briefcase, Loader2, AlertCircle, MapPin, Clock, Users, Calendar, Plus, Trash2, Pencil, Link2, Check } from 'lucide-react';
 import { RecruiterAnalytics } from './RecruiterAnalytics';
 import { Button } from './Button';
 import { PostJobModal } from './PostJobModal';
@@ -21,9 +21,18 @@ export function RecruiterDashboard(_props: { firstName?: string }) {
   const [jobToDelete, setJobToDelete] = useState<Job | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [jobToEdit, setJobToEdit] = useState<Job | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const { data: jobs = [], isLoading, error, refetch } = useRecruiterJobs();
   const deleteJob = useDeleteJob();
+
+  const handleCopyLink = (e: React.MouseEvent, job: Job) => {
+    e.stopPropagation();
+    const url = `${window.location.origin}/jobs/${job.id}`;
+    navigator.clipboard.writeText(url);
+    setCopiedId(job.id);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
 
   const handleEdit = (e: React.MouseEvent, job: Job) => {
     e.stopPropagation();
@@ -141,6 +150,17 @@ export function RecruiterDashboard(_props: { firstName?: string }) {
                           New
                         </span>
                       )}
+                      <button
+                        onClick={(e) => handleCopyLink(e, job)}
+                        className="p-1.5 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded-md transition-all"
+                        title="Copy job link"
+                      >
+                        {copiedId === job.id ? (
+                          <Check className="h-4 w-4 text-green-500" />
+                        ) : (
+                          <Link2 className="h-4 w-4" />
+                        )}
+                      </button>
                       <button
                         onClick={(e) => handleEdit(e, job)}
                         className="p-1.5 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded-md transition-all"
