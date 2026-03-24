@@ -107,7 +107,7 @@ export function AppSidebar({ role, onOpenScore, ...props }: AppSidebarProps) {
                       `}
                                         >
                                             {link.href ? (
-                                                <Link href={link.href} className="flex items-center gap-3 group-data-[collapsible=icon]:justify-center">
+                                                <Link href={link.href} onClick={() => setOpenMobile(false)} className="flex items-center gap-3 group-data-[collapsible=icon]:justify-center">
                                                     <link.icon className={`h-5 w-5 flex-shrink-0 transition-transform ${isActive ? 'scale-110' : 'group-hover:scale-110'}`} />
                                                     <span className="font-medium text-sm tracking-wide font-sans group-data-[collapsible=icon]:hidden">{link.label}</span>
                                                 </Link>

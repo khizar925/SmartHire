@@ -334,7 +334,7 @@ export async function PATCH(request: Request) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
         }
 
-        const ALLOWED_STATUSES = ['pending', 'shortlisted', 'accepted', 'rejected'];
+        const ALLOWED_STATUSES = ['pending', 'shortlisted', 'accepted', 'rejected', 'hired'];
         if (!ALLOWED_STATUSES.includes(status)) {
             return NextResponse.json({ error: 'Invalid status value' }, { status: 400 });
         }

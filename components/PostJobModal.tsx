@@ -176,8 +176,8 @@ export function PostJobModal({ isOpen, onClose, onJobposted }: PostJobModalProps
         return;
       }
 
-      // Invalidate cache so dashboard updates instantly
-      await qc.invalidateQueries({ queryKey: queryKeys.jobs() });
+      // Refetch so dashboard updates instantly
+      await qc.refetchQueries({ queryKey: queryKeys.jobs() });
       onJobposted();
 
       if (status === 'draft') {

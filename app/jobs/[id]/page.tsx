@@ -1,7 +1,7 @@
 // app/jobs/[id]/page.tsx
 'use client';
 
-import { use, useState, useEffect } from 'react';
+import { use, useState, useEffect, useRef } from 'react';
 import { Loader2, AlertCircle, MapPin, Clock, Upload, CheckCircle, X } from 'lucide-react';
 import { Button } from '@/components/Button';
 import Link from 'next/link';
@@ -59,6 +59,7 @@ export default function JobPage({ params }: Props) {
     const [formData,     setFormData]     = useState<ApplicationFormData>(EMPTY_FORM);
     const [formErrors,   setFormErrors]   = useState<FormErrors>({});
     const [submitMessage, setSubmitMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+    const formRef = useRef<HTMLFormElement>(null);
 
     // ── Queries ────────────────────────────────────────────────────────────────
     const { data: jobData, isLoading, error, refetch } = usePublicJob(id);
@@ -149,7 +150,13 @@ export default function JobPage({ params }: Props) {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setSubmitMessage(null);
-        if (!validateForm()) return;
+        if (!validateForm()) {
+            setTimeout(() => {
+                const firstError = formRef.current?.querySelector('.text-red-600');
+                firstError?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 50);
+            return;
+        }
 
         const fd = new FormData();
         fd.append('jobId', id);
@@ -296,7 +303,7 @@ export default function JobPage({ params }: Props) {
                         ) : (
                             <>
                                 <h2 className="text-2xl font-bold text-slate-900 mb-6">Apply for this Position</h2>
-                                <form onSubmit={handleSubmit} className="space-y-6">
+                                <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
                                     {/* Name */}
                                     <div>
                                         <label htmlFor="name" className="block text-sm font-semibold text-slate-900 mb-2">Name *</label>
