@@ -43,7 +43,7 @@ export function ScoreResumeModal({ isOpen, onClose }: ScoreResumeModalProps) {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const searchRef = useRef<HTMLInputElement>(null);
     const jobListRef = useRef<HTMLDivElement>(null);
-    const searchTimeout = useRef<ReturnType<typeof setTimeout>>();
+    const searchTimeout = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
     useEffect(() => {
         setMounted(true);
