@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import { Briefcase, Users } from 'lucide-react';
-import { Button } from './Button';
 import recruiterImage from "../assets/recruiter.png";
 import candidateImage from "../assets/candidate.png";
 
@@ -89,9 +88,6 @@ export const UsersSection = () => {
                   </li>
                 ))}
               </ul>
-              <div className="pt-2">
-                <Button variant="outline" size="sm">Learn More</Button>
-              </div>
             </div>
             <div className="w-full md:w-1/2 aspect-[4/3] rounded-2xl overflow-hidden shadow-lg relative">
               <div className="absolute inset-0 bg-slate-900/10 mix-blend-multiply z-10"></div>
