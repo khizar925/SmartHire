@@ -2,6 +2,14 @@ import { Resend } from 'resend';
 
 const resend = new Resend(process.env.RESEND_API);
 
+function escapeHtml(str: string): string {
+    return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+
 interface StatusEmailParams {
     to: string;
     candidateName: string;
@@ -229,10 +237,15 @@ const subjects: Record<StatusEmailParams['status'], (jobTitle: string) => string
 export async function sendStatusEmail(params: StatusEmailParams) {
     const { to, candidateName, jobTitle, companyName, status, feedback, interviewDate, interviewTime } = params;
 
+    const safeName    = escapeHtml(candidateName);
+    const safeTitle   = escapeHtml(jobTitle);
+    const safeCompany = escapeHtml(companyName);
+    const safeFeedback = feedback ? escapeHtml(feedback) : undefined;
+
     const htmlMap: Record<StatusEmailParams['status'], string> = {
-        shortlisted: shortlistedHtml(candidateName, jobTitle, companyName, interviewDate, interviewTime),
-        accepted:    acceptedHtml(candidateName, jobTitle, companyName),
-        rejected:    rejectedHtml(candidateName, jobTitle, companyName, feedback),
+        shortlisted: shortlistedHtml(safeName, safeTitle, safeCompany, interviewDate, interviewTime),
+        accepted:    acceptedHtml(safeName, safeTitle, safeCompany),
+        rejected:    rejectedHtml(safeName, safeTitle, safeCompany, safeFeedback),
     };
 
     await resend.emails.send({

@@ -28,6 +28,8 @@ export async function POST(request: Request) {
     }
     if (!job_description || job_description.trim() === '') {
       errors.push('Job description is required');
+    } else if (job_description.length > 10000) {
+      errors.push('Job description must be 10,000 characters or fewer');
     }
 
     // SRS Validation: Skills (Tags) - Minimum 3
@@ -68,7 +70,7 @@ export async function POST(request: Request) {
     if (error) {
       console.error('Supabase error creating job:', error);
       return NextResponse.json(
-        { error: 'Failed to create job', details: [error.message] },
+        { error: 'Failed to create job' },
         { status: 500 }
       );
     }
@@ -109,7 +111,7 @@ export async function GET() {
     if (error) {
       console.error('Supabase error fetching jobs:', error);
       return NextResponse.json(
-        { error: 'Failed to load jobs', details: [error.message] },
+        { error: 'Failed to load jobs' },
         { status: 500 }
       );
     }
@@ -148,10 +150,16 @@ export async function PATCH(request: Request) {
     if (!job_location?.trim())     errors.push('Job location is required');
     if (!employment_type?.trim())  errors.push('Employment type is required');
     if (!job_description?.trim())  errors.push('Job description is required');
+    else if (job_description.length > 10000) errors.push('Job description must be 10,000 characters or fewer');
     if (!experience_level?.trim()) errors.push('Experience level is required');
 
     const skillList = skills ? skills.split(',').map((s: string) => s.trim()).filter((s: string) => s !== '') : [];
     if (skillList.length < 3) errors.push('At least 3 skills are required');
+
+    const ALLOWED_JOB_STATUSES = ['active', 'closed', 'draft'];
+    if (status && !ALLOWED_JOB_STATUSES.includes(status)) {
+      return NextResponse.json({ error: 'Invalid status value' }, { status: 400 });
+    }
 
     if (errors.length > 0) {
       return NextResponse.json({ error: 'Validation failed', details: errors }, { status: 400 });

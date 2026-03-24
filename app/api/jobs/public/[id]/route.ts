@@ -6,6 +6,7 @@ const fetchData = async (id: string) => {
         .from('jobs')
         .select('*')
         .eq('id', id)
+        .eq('status', 'active')
         .single();
 
     return { data, error };

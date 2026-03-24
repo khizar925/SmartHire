@@ -100,6 +100,20 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
         }
 
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!email || !emailRegex.test(email)) {
+            return NextResponse.json({ error: 'Invalid email address' }, { status: 400 });
+        }
+
+        const exp = parseFloat(experience);
+        if (isNaN(exp) || exp < 0 || exp > 60) {
+            return NextResponse.json({ error: 'Invalid years of experience' }, { status: 400 });
+        }
+
+        if (coverLetter && coverLetter.length > 5000) {
+            return NextResponse.json({ error: 'Cover letter must be 5000 characters or fewer' }, { status: 400 });
+        }
+
         // REQSAFE-03: MIME type + magic byte + size validation
         const resumeBuffer = Buffer.from(await resume.arrayBuffer());
         const fileValidationError = validateFile(resume, resumeBuffer);
@@ -164,6 +178,9 @@ export async function POST(request: Request) {
 
         if (dbError) {
             console.error('Database error:', dbError);
+            if (dbError.code === '23505') {
+                return NextResponse.json({ error: 'You have already applied for this job' }, { status: 400 });
+            }
             return NextResponse.json({ error: 'Failed to save application' }, { status: 500 });
         }
 
@@ -315,6 +332,11 @@ export async function PATCH(request: Request) {
 
         if (!applicationId || !status) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+        }
+
+        const ALLOWED_STATUSES = ['pending', 'shortlisted', 'accepted', 'rejected'];
+        if (!ALLOWED_STATUSES.includes(status)) {
+            return NextResponse.json({ error: 'Invalid status value' }, { status: 400 });
         }
 
         // 1. Verify that the current user is the recruiter for the job this application belongs to

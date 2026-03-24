@@ -33,7 +33,7 @@ export async function GET(request: Request) {
     if (countError) {
       console.error('Supabase error counting jobs:', countError);
       return NextResponse.json(
-        { error: 'Failed to load jobs', details: [countError.message] },
+        { error: 'Failed to load jobs' },
         { status: 500 }
       );
     }
@@ -58,7 +58,7 @@ export async function GET(request: Request) {
     if (error) {
       console.error('Supabase error fetching jobs:', error);
       return NextResponse.json(
-        { error: 'Failed to load jobs', details: [error.message] },
+        { error: 'Failed to load jobs' },
         { status: 500 }
       );
     }
