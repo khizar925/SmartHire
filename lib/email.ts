@@ -141,21 +141,6 @@ function buildGoogleCalendarUrl(title: string, date: string, time: string, descr
 
 function interviewFormatBlock(interviewType?: string, interviewLink?: string): string {
     if (!interviewType) return '';
-    if (interviewType === 'google_meet') {
-        return `
-        <table cellpadding="0" cellspacing="0" width="100%" style="margin:0 0 12px;">
-          <tr>
-            <td style="background:#f0f9ff;border-left:3px solid #0ea5e9;border-radius:0 8px 8px 0;padding:12px 16px;">
-              <p style="margin:0;font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;">Interview Format</p>
-              <p style="margin:4px 0 8px;font-size:15px;color:#1e293b;font-weight:600;">🎥 Google Meet (Video Call)</p>
-              <a href="${interviewLink}" target="_blank" rel="noopener noreferrer"
-                style="display:inline-block;background:#0ea5e9;color:#ffffff;text-decoration:none;font-size:13px;font-weight:700;padding:8px 16px;border-radius:8px;">
-                Join Google Meet
-              </a>
-            </td>
-          </tr>
-        </table>`;
-    }
     if (interviewType === 'phone_call') {
         return `
         <table cellpadding="0" cellspacing="0" width="100%" style="margin:0 0 12px;">

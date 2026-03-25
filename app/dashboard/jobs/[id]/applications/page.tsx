@@ -80,7 +80,7 @@ export default function JobApplicationsPage({ params }: { params: Promise<{ id: 
     const [scheduleAppId, setScheduleAppId] = useState<string | null>(null);
     const [interviewDate, setInterviewDate] = useState('');
     const [interviewTime, setInterviewTime] = useState('');
-    const [interviewType, setInterviewType] = useState<'google_meet' | 'phone_call' | 'on_site' | ''>('');
+    const [interviewType, setInterviewType] = useState<'phone_call' | 'on_site' | ''>('');
     const [interviewAddress, setInterviewAddress] = useState('');
     const [scheduleError, setScheduleError] = useState<string | null>(null);
     const [confirmedCalUrl, setConfirmedCalUrl] = useState<string | null>(null);
@@ -165,8 +165,7 @@ export default function JobApplicationsPage({ params }: { params: Promise<{ id: 
         if (interviewType === 'on_site' && !interviewAddress.trim()) { setScheduleError('Please enter the interview location.'); return; }
 
         const interviewLink =
-            interviewType === 'google_meet' ? 'https://meet.google.com/new' :
-            interviewType === 'on_site'     ? `https://maps.google.com/?q=${encodeURIComponent(interviewAddress.trim())}` :
+            interviewType === 'on_site' ? `https://maps.google.com/?q=${encodeURIComponent(interviewAddress.trim())}` :
             undefined;
 
         if (scheduleAppId) {
@@ -653,11 +652,10 @@ export default function JobApplicationsPage({ params }: { params: Promise<{ id: 
                                 <div className="space-y-4">
                                     <div className="space-y-1.5">
                                         <label className="text-sm font-semibold text-slate-700">Interview Format</label>
-                                        <div className="grid grid-cols-3 gap-2">
+                                        <div className="grid grid-cols-2 gap-2">
                                             {([
-                                                { value: 'google_meet', label: 'Google Meet', icon: '🎥' },
-                                                { value: 'phone_call',  label: 'Phone Call',  icon: '📞' },
-                                                { value: 'on_site',     label: 'On-site',     icon: '📍' },
+                                                { value: 'phone_call', label: 'Phone Call', icon: '📞' },
+                                                { value: 'on_site',    label: 'On-site',    icon: '📍' },
                                             ] as const).map(opt => (
                                                 <button key={opt.value} type="button"
                                                     onClick={() => { setInterviewType(opt.value); setScheduleError(null); }}
