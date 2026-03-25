@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { auth } from '@clerk/nextjs/server';
 import { supabase } from '@/lib/supabase-server';
 import { sendStatusEmail } from '@/lib/email';
 import { requireRole } from '@/lib/auth';
@@ -80,9 +81,7 @@ async function extractTextFromFile(file: File, buffer: Buffer): Promise<string> 
 
 export async function POST(request: Request) {
     try {
-        const authResult = await requireRole('candidate');
-        if (authResult instanceof NextResponse) return authResult;
-        const { userId } = authResult;
+        const { userId: clerkUserId } = await auth();
 
         const formData = await request.formData();
 
@@ -99,6 +98,9 @@ export async function POST(request: Request) {
         if (!jobId || !resume) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
         }
+
+        // Guests get a stable ID derived from their email so duplicate checks still work
+        const userId = clerkUserId ?? `guest_${email}`;
 
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!email || !emailRegex.test(email)) {

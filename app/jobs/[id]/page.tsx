@@ -172,7 +172,7 @@ export default function JobPage({ params }: Props) {
         try {
             await submit.mutateAsync(fd);
             setSubmitMessage({ type: 'success', text: 'Your application has been submitted successfully! The recruiter will review it soon.' });
-            setTimeout(() => router.push('/dashboard/applications'), 2000);
+            if (userId) setTimeout(() => router.push('/dashboard/applications'), 2000);
         } catch (err: unknown) {
             const msg = err instanceof Error ? err.message : 'Failed to submit application. Please try again.';
             setSubmitMessage({ type: 'error', text: msg });
