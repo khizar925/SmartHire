@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { auth, clerkClient } from '@clerk/nextjs/server';
 import { supabase } from '@/lib/supabase-server';
 import { sendStatusEmail } from '@/lib/email';
 import { requireRole } from '@/lib/auth';
@@ -344,7 +344,7 @@ export async function PATCH(request: Request) {
         // 1. Verify that the current user is the recruiter for the job this application belongs to
         const { data: appData, error: appError } = await supabase
             .from('applications')
-            .select('job_id, full_name, email, jobs(recruiter_id, job_title, company_name)')
+            .select('job_id, full_name, email, status, jobs(recruiter_id, job_title, company_name)')
             .eq('id', applicationId)
             .single();
 
@@ -385,6 +385,19 @@ export async function PATCH(request: Request) {
         const notifyStatuses = ['accepted', 'rejected', 'shortlisted', 'hired'];
         if (notifyStatuses.includes(status)) {
             try {
+                // Detect reschedule: application was already shortlisted and is being shortlisted again with new date/time
+                const isReschedule = appData.status === 'shortlisted' && status === 'shortlisted';
+
+                // Fetch recruiter email from Clerk for the mailto reschedule link
+                let recruiterEmail: string | undefined;
+                try {
+                    const client = await clerkClient();
+                    const recruiterUser = await client.users.getUser(userId);
+                    recruiterEmail = recruiterUser.primaryEmailAddress?.emailAddress;
+                } catch {
+                    // Non-fatal: mailto link will simply be omitted from email
+                }
+
                 await sendStatusEmail({
                     to: appData.email,
                     candidateName: appData.full_name,
@@ -398,6 +411,8 @@ export async function PATCH(request: Request) {
                     interviewTime: interviewTime ?? undefined,
                     interviewType: interviewType ?? undefined,
                     interviewLink: interviewLink ?? undefined,
+                    isReschedule,
+                    recruiterEmail,
                 });
             } catch (emailError) {
                 console.error('Failed to send status email:', emailError);

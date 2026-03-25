@@ -6,7 +6,7 @@ import {
     ArrowLeft, Users, GraduationCap,
     Award, FileText, Loader2, AlertCircle,
     User, CheckCircle, XCircle, Search, Filter, ArrowUpDown, Briefcase, RefreshCw,
-    Calendar, Clock, ThumbsUp, ThumbsDown, Phone
+    Calendar, Clock, ThumbsUp, ThumbsDown, Phone, CalendarClock, Info
 } from 'lucide-react';
 import { Button } from '@/components/Button';
 import {
@@ -84,6 +84,7 @@ export default function JobApplicationsPage({ params }: { params: Promise<{ id: 
     const [interviewAddress, setInterviewAddress] = useState('');
     const [scheduleError, setScheduleError] = useState<string | null>(null);
     const [confirmedCalUrl, setConfirmedCalUrl] = useState<string | null>(null);
+    const [isReschedule, setIsReschedule] = useState(false);
 
     const TIME_SLOTS = [
         '09:00','09:30','10:00','10:30','11:00','11:30',
@@ -155,6 +156,23 @@ export default function JobApplicationsPage({ params }: { params: Promise<{ id: 
         setInterviewAddress('');
         setScheduleError(null);
         setConfirmedCalUrl(null);
+        setIsReschedule(false);
+        setIsScheduleModalOpen(true);
+    };
+
+    const handleRescheduleClick = (app: Application) => {
+        setScheduleAppId(app.id);
+        setInterviewDate(app.interview_date ?? '');
+        setInterviewTime(app.interview_time ?? '');
+        setInterviewType((app.interview_type as 'phone_call' | 'on_site' | '') ?? '');
+        // Extract address from Google Maps URL if on_site
+        const existingAddress = (app.interview_type === 'on_site' && app.interview_link)
+            ? decodeURIComponent(app.interview_link.replace('https://maps.google.com/?q=', ''))
+            : '';
+        setInterviewAddress(existingAddress);
+        setScheduleError(null);
+        setConfirmedCalUrl(null);
+        setIsReschedule(true);
         setIsScheduleModalOpen(true);
     };
 
@@ -180,6 +198,7 @@ export default function JobApplicationsPage({ params }: { params: Promise<{ id: 
                     interviewTime,
                 );
                 setConfirmedCalUrl(calUrl);
+                setIsReschedule(false);
             }
         }
     };
@@ -396,6 +415,9 @@ export default function JobApplicationsPage({ params }: { params: Promise<{ id: 
                                             )}
                                             {app.status === 'shortlisted' && (
                                                 <>
+                                                    <button onClick={() => handleRescheduleClick(app)} disabled={isUpdating} title="Reschedule Interview" className="p-2 bg-violet-100 text-violet-600 rounded-lg hover:bg-violet-200 transition-colors disabled:opacity-50">
+                                                        <CalendarClock className="h-4 w-4" />
+                                                    </button>
                                                     <button onClick={() => handleUpdateStatus(app.id, 'hired')} disabled={isUpdating} title="Mark as Hired" className="p-2 bg-emerald-100 text-emerald-600 rounded-lg hover:bg-emerald-200 transition-colors disabled:opacity-50">
                                                         {isUpdating ? <Loader2 className="h-4 w-4 animate-spin" /> : <ThumbsUp className="h-4 w-4" />}
                                                     </button>
@@ -534,6 +556,10 @@ export default function JobApplicationsPage({ params }: { params: Promise<{ id: 
                                                             )}
                                                             {app.status === 'shortlisted' && (
                                                                 <>
+                                                                    <button onClick={() => handleRescheduleClick(app)} disabled={isUpdating} title="Reschedule Interview"
+                                                                        className="p-2 bg-violet-100 text-violet-600 rounded-lg hover:bg-violet-200 transition-colors disabled:opacity-50">
+                                                                        <CalendarClock className="h-4 w-4" />
+                                                                    </button>
                                                                     <button onClick={() => handleUpdateStatus(app.id, 'hired')} disabled={isUpdating} title="Mark as Hired"
                                                                         className="p-2 bg-emerald-100 text-emerald-600 rounded-lg hover:bg-emerald-200 transition-colors disabled:opacity-50">
                                                                         {isUpdating ? <Loader2 className="h-4 w-4 animate-spin" /> : <ThumbsUp className="h-4 w-4" />}
@@ -611,7 +637,7 @@ export default function JobApplicationsPage({ params }: { params: Promise<{ id: 
                                     <CheckCircle className="h-8 w-8" />
                                 </div>
                                 <div>
-                                    <h3 className="text-xl font-bold text-slate-900">Interview Scheduled!</h3>
+                                    <h3 className="text-xl font-bold text-slate-900">{isReschedule ? 'Interview Rescheduled!' : 'Interview Scheduled!'}</h3>
                                     <p className="text-sm text-slate-500 mt-1">Candidate notified by email. Add this to your calendar:</p>
                                 </div>
                                 <a
@@ -640,14 +666,18 @@ export default function JobApplicationsPage({ params }: { params: Promise<{ id: 
                         ) : (
                             /* ── Scheduling form ── */
                             <>
-                                <div className="flex items-center gap-3 mb-6">
-                                    <div className="p-2.5 bg-sky-100 text-sky-600 rounded-xl">
-                                        <Calendar className="h-5 w-5" />
+                                <div className="flex items-center gap-3 mb-4">
+                                    <div className={`p-2.5 rounded-xl ${isReschedule ? 'bg-violet-100 text-violet-600' : 'bg-sky-100 text-sky-600'}`}>
+                                        {isReschedule ? <CalendarClock className="h-5 w-5" /> : <Calendar className="h-5 w-5" />}
                                     </div>
                                     <div>
-                                        <h3 className="text-xl font-bold text-slate-900">Schedule Interview</h3>
+                                        <h3 className="text-xl font-bold text-slate-900">{isReschedule ? 'Reschedule Interview' : 'Schedule Interview'}</h3>
                                         <p className="text-sm text-slate-500">Candidate will be notified by email</p>
                                     </div>
+                                </div>
+                                <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5 mb-4">
+                                    <Info className="h-4 w-4 text-amber-500 flex-shrink-0 mt-0.5" />
+                                    <p className="text-xs text-amber-700 leading-snug">Your email address will be shared with the candidate in the notification email so they can contact you to request rescheduling if needed.</p>
                                 </div>
                                 <div className="space-y-4">
                                     <div className="space-y-1.5">
@@ -710,8 +740,8 @@ export default function JobApplicationsPage({ params }: { params: Promise<{ id: 
                                     {scheduleError && <p className="text-sm text-red-600 font-medium">{scheduleError}</p>}
                                     <div className="flex gap-3 pt-2">
                                         <Button variant="outline" className="flex-1" onClick={() => setIsScheduleModalOpen(false)}>Cancel</Button>
-                                        <Button variant="primary" className="flex-1" onClick={handleConfirmSchedule} disabled={updateStatus.isPending}>
-                                            {updateStatus.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Shortlist & Send Invite'}
+                                        <Button variant="primary" className={`flex-1 ${isReschedule ? 'bg-violet-600 hover:bg-violet-700' : ''}`} onClick={handleConfirmSchedule} disabled={updateStatus.isPending}>
+                                            {updateStatus.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : isReschedule ? 'Reschedule & Notify' : 'Shortlist & Send Invite'}
                                         </Button>
                                     </div>
                                 </div>

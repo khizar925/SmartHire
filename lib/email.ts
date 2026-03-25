@@ -21,6 +21,8 @@ interface StatusEmailParams {
     interviewTime?: string;
     interviewType?: string;
     interviewLink?: string;
+    isReschedule?: boolean;
+    recruiterEmail?: string;
 }
 
 // ── Shared layout wrapper ────────────────────────────────────────────────────
@@ -174,7 +176,26 @@ function interviewFormatBlock(interviewType?: string, interviewLink?: string): s
     return '';
 }
 
-function shortlistedHtml(candidateName: string, jobTitle: string, companyName: string, interviewDate?: string, interviewTime?: string, interviewType?: string, interviewLink?: string): string {
+function rescheduleRequestBlock(recruiterEmail: string, jobTitle: string, companyName: string, interviewDate: string, interviewTime: string): string {
+    const subject = encodeURIComponent(`Reschedule Request — ${jobTitle}`);
+    const body = encodeURIComponent(
+        `Hi,\n\nI would like to request a reschedule for my interview for the ${jobTitle} position at ${companyName}, currently scheduled for ${formatInterviewDate(interviewDate)} at ${formatInterviewTime(interviewTime)}.\n\nPlease let me know your available times.\n\nThank you.`
+    );
+    return `
+    <table cellpadding="0" cellspacing="0" width="100%" style="margin-top:24px;">
+      <tr>
+        <td style="border-top:1px solid #e2e8f0;padding-top:20px;text-align:center;">
+          <p style="margin:0 0 10px;font-size:13px;color:#64748b;">Need to reschedule? Let the hiring team know.</p>
+          <a href="mailto:${recruiterEmail}?subject=${subject}&body=${body}"
+            style="display:inline-block;background:#f1f5f9;color:#475569;text-decoration:none;font-size:13px;font-weight:600;padding:8px 18px;border-radius:8px;border:1px solid #e2e8f0;">
+            Request a Reschedule
+          </a>
+        </td>
+      </tr>
+    </table>`;
+}
+
+function shortlistedHtml(candidateName: string, jobTitle: string, companyName: string, interviewDate?: string, interviewTime?: string, interviewType?: string, interviewLink?: string, recruiterEmail?: string): string {
     const accent = '#0ea5e9';
     const icon = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>`;
     const badge = `You've Been Shortlisted`;
@@ -213,6 +234,9 @@ function shortlistedHtml(candidateName: string, jobTitle: string, companyName: s
     const nextStepsText = (interviewDate && interviewTime)
         ? `Please make sure you are available at the scheduled time. If you have any questions, reach out to the hiring team directly.`
         : `The recruiter will be in touch soon with the next steps. Make sure to keep an eye on your inbox.`;
+    const mailtoBlock = (recruiterEmail && interviewDate && interviewTime)
+        ? rescheduleRequestBlock(recruiterEmail, jobTitle, companyName, interviewDate, interviewTime)
+        : '';
     const body = `
         ${greeting(candidateName)}
         ${bodyText(`Great news — you've been shortlisted for the position below. The hiring team has reviewed your application and wants to move forward with you.`)}
@@ -220,7 +244,60 @@ function shortlistedHtml(candidateName: string, jobTitle: string, companyName: s
         ${infoBox('Company', companyName, accent)}
         ${interviewBlock}
         ${bodyText(nextStepsText)}
-        <p style="margin:0;font-size:15px;color:#475569;line-height:1.7;">Best of luck, and congratulations on making it this far! 🎉</p>`;
+        <p style="margin:0;font-size:15px;color:#475569;line-height:1.7;">Best of luck, and congratulations on making it this far! 🎉</p>
+        ${mailtoBlock}`;
+    return layout(accent, icon, `${badge}|||BADGE|||${body}`);
+}
+
+function rescheduledHtml(candidateName: string, jobTitle: string, companyName: string, interviewDate?: string, interviewTime?: string, interviewType?: string, interviewLink?: string, recruiterEmail?: string): string {
+    const accent = '#0ea5e9';
+    const icon = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M9 16l2 2 4-4"/></svg>`;
+    const badge = `Interview Rescheduled`;
+
+    const calUrl = (interviewDate && interviewTime)
+        ? buildGoogleCalendarUrl(
+            `Interview: ${jobTitle} at ${companyName}`,
+            interviewDate,
+            interviewTime,
+            `Interview for the ${jobTitle} position at ${companyName}. Scheduled via SmartHire.`,
+          )
+        : null;
+
+    const interviewBlock = (interviewDate && interviewTime) ? `
+        <table cellpadding="0" cellspacing="0" width="100%" style="margin:0 0 24px;">
+          <tr>
+            <td style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:20px;">
+              <p style="margin:0 0 12px;font-size:12px;font-weight:700;color:#0369a1;text-transform:uppercase;letter-spacing:0.5px;">📅 Updated Interview Details</p>
+              ${infoBox('Date', formatInterviewDate(interviewDate), accent)}
+              ${infoBox('Time', formatInterviewTime(interviewTime), accent)}
+              ${interviewFormatBlock(interviewType, interviewLink)}
+              <table cellpadding="0" cellspacing="0" width="100%" style="margin-top:16px;">
+                <tr>
+                  <td align="center">
+                    <a href="${calUrl}" target="_blank" rel="noopener noreferrer"
+                      style="display:inline-flex;align-items:center;gap:8px;background:#4285F4;color:#ffffff;text-decoration:none;font-size:13px;font-weight:700;padding:10px 20px;border-radius:8px;letter-spacing:0.3px;">
+                      📆 Add to Google Calendar
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>` : '';
+
+    const mailtoBlock = (recruiterEmail && interviewDate && interviewTime)
+        ? rescheduleRequestBlock(recruiterEmail, jobTitle, companyName, interviewDate, interviewTime)
+        : '';
+
+    const body = `
+        ${greeting(candidateName)}
+        ${bodyText(`Your interview for the position below has been <strong style="color:#0ea5e9;">rescheduled</strong>. Please take note of the updated date and time.`)}
+        ${infoBox('Position', jobTitle, accent)}
+        ${infoBox('Company', companyName, accent)}
+        ${interviewBlock}
+        ${bodyText(`Please make sure you are available at the new scheduled time. If you have any questions, reach out to the hiring team directly.`)}
+        <p style="margin:0;font-size:15px;color:#475569;line-height:1.7;">We look forward to speaking with you! 🗓️</p>
+        ${mailtoBlock}`;
     return layout(accent, icon, `${badge}|||BADGE|||${body}`);
 }
 
@@ -270,19 +347,33 @@ const subjects: Record<StatusEmailParams['status'], (jobTitle: string) => string
     hired:       (t) => `🎉 Congratulations! Your application for ${t} has been accepted`,
     rejected:    (t) => `Your application for ${t} — an update`,
 };
+const rescheduledSubject = (jobTitle: string) => `📅 Your interview for ${jobTitle} has been rescheduled`;
 
 // ── Export ───────────────────────────────────────────────────────────────────
 
 export async function sendStatusEmail(params: StatusEmailParams) {
-    const { to, candidateName, jobTitle, companyName, status, feedback, interviewDate, interviewTime, interviewType, interviewLink } = params;
+    const { to, candidateName, jobTitle, companyName, status, feedback, interviewDate, interviewTime, interviewType, interviewLink, isReschedule, recruiterEmail } = params;
 
     const safeName    = escapeHtml(candidateName);
     const safeTitle   = escapeHtml(jobTitle);
     const safeCompany = escapeHtml(companyName);
     const safeFeedback = feedback ? escapeHtml(feedback) : undefined;
 
+    // Reschedule path — same DB status ('shortlisted') but different email
+    if (isReschedule && status === 'shortlisted') {
+        const html = rescheduledHtml(safeName, safeTitle, safeCompany, interviewDate, interviewTime, interviewType, interviewLink, recruiterEmail);
+        await resend.emails.send({
+            from: 'SmartHire <noreply@smarthire.website>',
+            replyTo: 'info@smarthire.website',
+            to,
+            subject: rescheduledSubject(jobTitle),
+            html,
+        });
+        return;
+    }
+
     const htmlMap: Record<StatusEmailParams['status'], string> = {
-        shortlisted: shortlistedHtml(safeName, safeTitle, safeCompany, interviewDate, interviewTime, interviewType, interviewLink),
+        shortlisted: shortlistedHtml(safeName, safeTitle, safeCompany, interviewDate, interviewTime, interviewType, interviewLink, recruiterEmail),
         accepted:    acceptedHtml(safeName, safeTitle, safeCompany),
         hired:       acceptedHtml(safeName, safeTitle, safeCompany),
         rejected:    rejectedHtml(safeName, safeTitle, safeCompany, safeFeedback),
