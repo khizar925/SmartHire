@@ -6,7 +6,7 @@ import {
     ArrowLeft, Users, GraduationCap,
     Award, FileText, Loader2, AlertCircle,
     User, CheckCircle, XCircle, Search, Filter, ArrowUpDown, Briefcase, RefreshCw,
-    Calendar, Clock, ThumbsUp, ThumbsDown
+    Calendar, Clock, ThumbsUp, ThumbsDown, Phone
 } from 'lucide-react';
 import { Button } from '@/components/Button';
 import {
@@ -80,6 +80,8 @@ export default function JobApplicationsPage({ params }: { params: Promise<{ id: 
     const [scheduleAppId, setScheduleAppId] = useState<string | null>(null);
     const [interviewDate, setInterviewDate] = useState('');
     const [interviewTime, setInterviewTime] = useState('');
+    const [interviewType, setInterviewType] = useState<'google_meet' | 'phone_call' | 'on_site' | ''>('');
+    const [interviewAddress, setInterviewAddress] = useState('');
     const [scheduleError, setScheduleError] = useState<string | null>(null);
     const [confirmedCalUrl, setConfirmedCalUrl] = useState<string | null>(null);
 
@@ -93,6 +95,12 @@ export default function JobApplicationsPage({ params }: { params: Promise<{ id: 
         return `${h % 12 || 12}:${m.toString().padStart(2,'0')} ${h < 12 ? 'AM' : 'PM'}`;
     };
     const today = new Date().toISOString().split('T')[0];
+    const isSlotDisabled = (slot: string) => {
+        if (interviewDate !== today) return false;
+        const [h, m] = slot.split(':').map(Number);
+        const now = new Date();
+        return h < now.getHours() || (h === now.getHours() && m <= now.getMinutes());
+    };
 
     // Filter / sort
     const [searchQuery,     setSearchQuery]     = useState('');
@@ -114,9 +122,9 @@ export default function JobApplicationsPage({ params }: { params: Promise<{ id: 
     const job = jobs.find(j => j.id === id) ?? null;
 
     // ── Status update ─────────────────────────────────────────────────────────
-    const handleUpdateStatus = async (applicationId: string, status: string, feedback?: string, interviewDate?: string, interviewTime?: string) => {
+    const handleUpdateStatus = async (applicationId: string, status: string, feedback?: string, interviewDate?: string, interviewTime?: string, interviewType?: string, interviewLink?: string) => {
         try {
-            await updateStatus.mutateAsync({ applicationId, status, feedback, interviewDate, interviewTime });
+            await updateStatus.mutateAsync({ applicationId, status, feedback, interviewDate, interviewTime, interviewType, interviewLink });
             return true;
         } catch {
             alert('Failed to update status');
@@ -143,16 +151,26 @@ export default function JobApplicationsPage({ params }: { params: Promise<{ id: 
         setScheduleAppId(applicationId);
         setInterviewDate('');
         setInterviewTime('');
+        setInterviewType('');
+        setInterviewAddress('');
         setScheduleError(null);
         setConfirmedCalUrl(null);
         setIsScheduleModalOpen(true);
     };
 
     const handleConfirmSchedule = async () => {
+        if (!interviewType) { setScheduleError('Please select an interview format.'); return; }
         if (!interviewDate) { setScheduleError('Please select an interview date.'); return; }
         if (!interviewTime) { setScheduleError('Please select a time slot.'); return; }
+        if (interviewType === 'on_site' && !interviewAddress.trim()) { setScheduleError('Please enter the interview location.'); return; }
+
+        const interviewLink =
+            interviewType === 'google_meet' ? 'https://meet.google.com/new' :
+            interviewType === 'on_site'     ? `https://maps.google.com/?q=${encodeURIComponent(interviewAddress.trim())}` :
+            undefined;
+
         if (scheduleAppId) {
-            const ok = await handleUpdateStatus(scheduleAppId, 'shortlisted', undefined, interviewDate, interviewTime);
+            const ok = await handleUpdateStatus(scheduleAppId, 'shortlisted', undefined, interviewDate, interviewTime, interviewType, interviewLink);
             if (ok) {
                 const app = applications.find(a => a.id === scheduleAppId);
                 const calUrl = buildGoogleCalendarUrl(
@@ -163,7 +181,6 @@ export default function JobApplicationsPage({ params }: { params: Promise<{ id: 
                     interviewTime,
                 );
                 setConfirmedCalUrl(calUrl);
-                // Stay in modal — show calendar step
             }
         }
     };
@@ -400,7 +417,7 @@ export default function JobApplicationsPage({ params }: { params: Promise<{ id: 
                                 <table className="w-full text-left border-collapse">
                                     <thead>
                                         <tr className="bg-slate-50/50 border-b border-slate-200">
-                                            {['Rank', 'Candidate', 'Status', 'Score', 'Experience', 'Education', 'Actions'].map(h => (
+                                            {['Rank', 'Candidate', 'Phone', 'Status', 'Score', 'Experience', 'Education', 'Actions'].map(h => (
                                                 <th key={h} className={`px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest ${h === 'Actions' ? 'text-right' : ''}`}>{h}</th>
                                             ))}
                                         </tr>
@@ -430,6 +447,12 @@ export default function JobApplicationsPage({ params }: { params: Promise<{ id: 
                                                                 <p className="font-bold text-slate-900">{app.full_name}</p>
                                                                 <p className="text-xs text-slate-500">{app.email}</p>
                                                             </div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <div className="flex items-center gap-2 text-slate-700">
+                                                            <Phone className="h-4 w-4 text-slate-400 flex-shrink-0" />
+                                                            <span className="font-medium text-sm">{app.phone}</span>
                                                         </div>
                                                     </td>
                                                     <td className="px-6 py-4">
@@ -629,6 +652,32 @@ export default function JobApplicationsPage({ params }: { params: Promise<{ id: 
                                 </div>
                                 <div className="space-y-4">
                                     <div className="space-y-1.5">
+                                        <label className="text-sm font-semibold text-slate-700">Interview Format</label>
+                                        <div className="grid grid-cols-3 gap-2">
+                                            {([
+                                                { value: 'google_meet', label: 'Google Meet', icon: '🎥' },
+                                                { value: 'phone_call',  label: 'Phone Call',  icon: '📞' },
+                                                { value: 'on_site',     label: 'On-site',     icon: '📍' },
+                                            ] as const).map(opt => (
+                                                <button key={opt.value} type="button"
+                                                    onClick={() => { setInterviewType(opt.value); setScheduleError(null); }}
+                                                    className={`flex flex-col items-center gap-1 py-3 px-2 rounded-xl border text-xs font-semibold transition-all ${interviewType === opt.value ? 'border-sky-500 bg-sky-50 text-sky-700' : 'border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50'}`}>
+                                                    <span className="text-lg">{opt.icon}</span>
+                                                    {opt.label}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    {interviewType === 'on_site' && (
+                                        <div className="space-y-1.5">
+                                            <label className="text-sm font-semibold text-slate-700">Interview Location</label>
+                                            <input type="text" value={interviewAddress}
+                                                onChange={e => { setInterviewAddress(e.target.value); setScheduleError(null); }}
+                                                placeholder="e.g. 123 Main Street, Lahore"
+                                                className="w-full h-11 px-4 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent" />
+                                        </div>
+                                    )}
+                                    <div className="space-y-1.5">
                                         <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
                                             <Calendar className="h-4 w-4 text-slate-400" /> Interview Date
                                         </label>
@@ -645,15 +694,19 @@ export default function JobApplicationsPage({ params }: { params: Promise<{ id: 
                                             <Clock className="h-4 w-4 text-slate-400" /> Time Slot
                                         </label>
                                         <div className="grid grid-cols-4 gap-2 max-h-48 overflow-y-auto pr-1">
-                                            {TIME_SLOTS.map(slot => (
-                                                <button
-                                                    key={slot}
-                                                    onClick={() => { setInterviewTime(slot); setScheduleError(null); }}
-                                                    className={`py-2 px-1 rounded-lg text-xs font-semibold border transition-all ${interviewTime === slot ? 'border-sky-500 bg-sky-50 text-sky-700' : 'border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50'}`}
-                                                >
-                                                    {formatTime(slot)}
-                                                </button>
-                                            ))}
+                                            {TIME_SLOTS.map(slot => {
+                                                const disabled = isSlotDisabled(slot);
+                                                return (
+                                                    <button
+                                                        key={slot}
+                                                        disabled={disabled}
+                                                        onClick={() => { setInterviewTime(slot); setScheduleError(null); }}
+                                                        className={`py-2 px-1 rounded-lg text-xs font-semibold border transition-all ${disabled ? 'border-slate-100 text-slate-300 bg-slate-50 cursor-not-allowed' : interviewTime === slot ? 'border-sky-500 bg-sky-50 text-sky-700' : 'border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50'}`}
+                                                    >
+                                                        {formatTime(slot)}
+                                                    </button>
+                                                );
+                                            })}
                                         </div>
                                     </div>
                                     {scheduleError && <p className="text-sm text-red-600 font-medium">{scheduleError}</p>}

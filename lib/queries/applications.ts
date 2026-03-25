@@ -14,6 +14,8 @@ export interface Application {
   rejection_feedback?: string;
   interview_date?: string;
   interview_time?: string;
+  interview_type?: string;
+  interview_link?: string;
   status: string;
   created_at: string;
   scores?: { score: number }[];

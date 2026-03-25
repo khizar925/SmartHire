@@ -18,7 +18,7 @@ export function useSubmitApplication(jobId: string) {
 export function useUpdateApplicationStatus(jobId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (payload: { applicationId: string; status: string; feedback?: string; interviewDate?: string; interviewTime?: string }) =>
+    mutationFn: (payload: { applicationId: string; status: string; feedback?: string; interviewDate?: string; interviewTime?: string; interviewType?: string; interviewLink?: string }) =>
       apiFetch('/api/application', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -30,7 +30,7 @@ export function useUpdateApplicationStatus(jobId: string) {
       qc.setQueryData(queryKeys.applications(jobId), (old: Application[] | undefined) =>
         old?.map(app =>
           app.id === payload.applicationId
-            ? { ...app, status: payload.status, rejection_feedback: payload.feedback, interview_date: payload.interviewDate, interview_time: payload.interviewTime }
+            ? { ...app, status: payload.status, rejection_feedback: payload.feedback, interview_date: payload.interviewDate, interview_time: payload.interviewTime, interview_type: payload.interviewType, interview_link: payload.interviewLink }
             : app
         )
       );

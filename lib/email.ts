@@ -19,6 +19,8 @@ interface StatusEmailParams {
     feedback?: string;
     interviewDate?: string;
     interviewTime?: string;
+    interviewType?: string;
+    interviewLink?: string;
 }
 
 // ── Shared layout wrapper ────────────────────────────────────────────────────
@@ -137,7 +139,57 @@ function buildGoogleCalendarUrl(title: string, date: string, time: string, descr
     return `https://calendar.google.com/calendar/render?${params.toString()}`;
 }
 
-function shortlistedHtml(candidateName: string, jobTitle: string, companyName: string, interviewDate?: string, interviewTime?: string): string {
+function interviewFormatBlock(interviewType?: string, interviewLink?: string): string {
+    if (!interviewType) return '';
+    if (interviewType === 'google_meet') {
+        return `
+        <table cellpadding="0" cellspacing="0" width="100%" style="margin:0 0 12px;">
+          <tr>
+            <td style="background:#f0f9ff;border-left:3px solid #0ea5e9;border-radius:0 8px 8px 0;padding:12px 16px;">
+              <p style="margin:0;font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;">Interview Format</p>
+              <p style="margin:4px 0 8px;font-size:15px;color:#1e293b;font-weight:600;">🎥 Google Meet (Video Call)</p>
+              <a href="${interviewLink}" target="_blank" rel="noopener noreferrer"
+                style="display:inline-block;background:#0ea5e9;color:#ffffff;text-decoration:none;font-size:13px;font-weight:700;padding:8px 16px;border-radius:8px;">
+                Join Google Meet
+              </a>
+            </td>
+          </tr>
+        </table>`;
+    }
+    if (interviewType === 'phone_call') {
+        return `
+        <table cellpadding="0" cellspacing="0" width="100%" style="margin:0 0 12px;">
+          <tr>
+            <td style="background:#f0f9ff;border-left:3px solid #0ea5e9;border-radius:0 8px 8px 0;padding:12px 16px;">
+              <p style="margin:0;font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;">Interview Format</p>
+              <p style="margin:4px 0 0;font-size:15px;color:#1e293b;font-weight:600;">📞 Phone Call</p>
+              <p style="margin:6px 0 0;font-size:13px;color:#475569;">We will call you at the phone number you provided in your application. Please make sure you are available at the scheduled time.</p>
+            </td>
+          </tr>
+        </table>`;
+    }
+    if (interviewType === 'on_site' && interviewLink) {
+        // interviewLink is the Google Maps URL
+        const address = decodeURIComponent(interviewLink.replace('https://maps.google.com/?q=', ''));
+        return `
+        <table cellpadding="0" cellspacing="0" width="100%" style="margin:0 0 12px;">
+          <tr>
+            <td style="background:#f0f9ff;border-left:3px solid #0ea5e9;border-radius:0 8px 8px 0;padding:12px 16px;">
+              <p style="margin:0;font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;">Interview Format</p>
+              <p style="margin:4px 0 4px;font-size:15px;color:#1e293b;font-weight:600;">📍 On-site</p>
+              <p style="margin:0 0 8px;font-size:14px;color:#475569;">${escapeHtml(address)}</p>
+              <a href="${interviewLink}" target="_blank" rel="noopener noreferrer"
+                style="display:inline-block;background:#0ea5e9;color:#ffffff;text-decoration:none;font-size:13px;font-weight:700;padding:8px 16px;border-radius:8px;">
+                View on Google Maps
+              </a>
+            </td>
+          </tr>
+        </table>`;
+    }
+    return '';
+}
+
+function shortlistedHtml(candidateName: string, jobTitle: string, companyName: string, interviewDate?: string, interviewTime?: string, interviewType?: string, interviewLink?: string): string {
     const accent = '#0ea5e9';
     const icon = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>`;
     const badge = `You've Been Shortlisted`;
@@ -158,6 +210,7 @@ function shortlistedHtml(candidateName: string, jobTitle: string, companyName: s
               <p style="margin:0 0 12px;font-size:12px;font-weight:700;color:#0369a1;text-transform:uppercase;letter-spacing:0.5px;">📅 Interview Scheduled</p>
               ${infoBox('Date', formatInterviewDate(interviewDate), accent)}
               ${infoBox('Time', formatInterviewTime(interviewTime), accent)}
+              ${interviewFormatBlock(interviewType, interviewLink)}
               <table cellpadding="0" cellspacing="0" width="100%" style="margin-top:16px;">
                 <tr>
                   <td align="center">
@@ -236,7 +289,7 @@ const subjects: Record<StatusEmailParams['status'], (jobTitle: string) => string
 // ── Export ───────────────────────────────────────────────────────────────────
 
 export async function sendStatusEmail(params: StatusEmailParams) {
-    const { to, candidateName, jobTitle, companyName, status, feedback, interviewDate, interviewTime } = params;
+    const { to, candidateName, jobTitle, companyName, status, feedback, interviewDate, interviewTime, interviewType, interviewLink } = params;
 
     const safeName    = escapeHtml(candidateName);
     const safeTitle   = escapeHtml(jobTitle);
@@ -244,7 +297,7 @@ export async function sendStatusEmail(params: StatusEmailParams) {
     const safeFeedback = feedback ? escapeHtml(feedback) : undefined;
 
     const htmlMap: Record<StatusEmailParams['status'], string> = {
-        shortlisted: shortlistedHtml(safeName, safeTitle, safeCompany, interviewDate, interviewTime),
+        shortlisted: shortlistedHtml(safeName, safeTitle, safeCompany, interviewDate, interviewTime, interviewType, interviewLink),
         accepted:    acceptedHtml(safeName, safeTitle, safeCompany),
         hired:       acceptedHtml(safeName, safeTitle, safeCompany),
         rejected:    rejectedHtml(safeName, safeTitle, safeCompany, safeFeedback),
