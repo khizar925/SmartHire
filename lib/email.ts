@@ -164,11 +164,7 @@ function interviewFormatBlock(interviewType?: string, interviewLink?: string): s
             <td style="background:#f0f9ff;border-left:3px solid #0ea5e9;border-radius:0 8px 8px 0;padding:12px 16px;">
               <p style="margin:0;font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;">Interview Format</p>
               <p style="margin:4px 0 4px;font-size:15px;color:#1e293b;font-weight:600;">📍 On-site</p>
-              <p style="margin:0 0 8px;font-size:14px;color:#475569;">${escapeHtml(address)}</p>
-              <a href="${interviewLink}" target="_blank" rel="noopener noreferrer"
-                style="display:inline-block;background:#0ea5e9;color:#ffffff;text-decoration:none;font-size:13px;font-weight:700;padding:8px 16px;border-radius:8px;">
-                View on Google Maps
-              </a>
+              <p style="margin:0;font-size:14px;color:#475569;">${escapeHtml(address)}</p>
             </td>
           </tr>
         </table>`;
