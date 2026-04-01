@@ -16,7 +16,6 @@ export function CandidateDashboard(_props: { firstName?: string }) {
   const [employmentType, setEmploymentType] = useState('');
   const [experienceLevel, setExperienceLevel] = useState('');
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const publicLink = process.env.NEXT_PUBLIC_APP_URL || (typeof window !== 'undefined' ? window.location.origin : '');
   const limit = 12;
 
   // Debounce search: wait 400ms after user stops typing before querying
@@ -193,7 +192,7 @@ export function CandidateDashboard(_props: { firstName?: string }) {
                       </div>
                     </div>
 
-                    <Link href={`${publicLink}/jobs/${job.id}?apply=true`}>
+                    <Link href={`/jobs/${job.id}?apply=true`}>
                       <Button variant="primary" className="w-full mt-auto">Apply Now</Button>
                     </Link>
                   </div>
