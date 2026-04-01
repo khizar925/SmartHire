@@ -23,9 +23,10 @@ export default function SignInPage() {
             <div className="flex items-center justify-center w-full lg:w-1/2 bg-gray-50">
                 <SignIn
                     withSignUp={true}
-                    afterSignInUrl="/onboarding"
-                    afterSignUpUrl="/onboarding"
-                    redirectUrl="/onboarding"
+                    // afterSignInUrl="/onboarding"  // deprecated
+                    // afterSignUpUrl="/onboarding"  // deprecated
+                    // redirectUrl="/onboarding"     // deprecated
+                    fallbackRedirectUrl="/onboarding"
                     appearance={{
                         elements: {
                             footer: { display: 'none' }
