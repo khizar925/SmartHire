@@ -70,11 +70,11 @@ export function FeedbackButton() {
             {/* Floating trigger button */}
             <button
                 onClick={() => { setIsOpen(true); reset(); }}
-                className="fixed bottom-6 right-6 z-50 flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium px-4 py-2.5 rounded-full shadow-lg shadow-primary-600/30 transition-all duration-200 hover:shadow-xl hover:shadow-primary-600/40 hover:-translate-y-0.5"
+                className="fixed bottom-6 right-6 z-50 flex items-center justify-center bg-primary-600 hover:bg-primary-700 text-white rounded-full shadow-lg shadow-primary-600/30 transition-all duration-200 hover:shadow-xl hover:shadow-primary-600/40 hover:-translate-y-0.5 sm:gap-2 sm:px-4 sm:py-2.5 sm:rounded-full w-10 h-10 sm:w-auto sm:h-auto"
                 aria-label="Give feedback"
             >
-                <MessageSquarePlus className="h-4 w-4" />
-                Feedback
+                <MessageSquarePlus className="h-5 w-5 shrink-0" />
+                <span className="hidden sm:inline text-sm font-medium">Feedback</span>
             </button>
 
             {/* Backdrop */}
