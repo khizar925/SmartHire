@@ -1,12 +1,15 @@
 // api/jobs/public/[id]/route.ts
 import { supabase } from '@/lib/supabase-server';
+import { JOB_EXPIRY_DAYS } from '@/lib/constants';
 
 const fetchData = async (id: string) => {
+    const cutoff = new Date(Date.now() - JOB_EXPIRY_DAYS * 86_400_000).toISOString();
     const { data, error } = await supabase
         .from('jobs')
         .select('*')
         .eq('id', id)
         .eq('status', 'active')
+        .gte('created_at', cutoff)
         .single();
 
     return { data, error };

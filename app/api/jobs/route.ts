@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase-server';
 import { requireRole } from '@/lib/auth';
+import { JOB_EXPIRY_DAYS } from '@/lib/constants';
 
 export async function POST(request: Request) {
   try {
@@ -101,10 +102,10 @@ export async function GET() {
     if (authResult instanceof NextResponse) return authResult;
     const { userId } = authResult;
 
-    // Fetch jobs for the current recruiter, ordered by created_at DESC
+    // Fetch jobs for the current recruiter with real application counts
     const { data, error } = await supabase
       .from('jobs')
-      .select('*')
+      .select('*, applications(count)')
       .eq('recruiter_id', userId)
       .order('created_at', { ascending: false });
 
@@ -116,8 +117,27 @@ export async function GET() {
       );
     }
 
+    // Map real application count into applicants_count (replaces stale stored counter)
+    const jobs = (data || []).map(({ applications, ...job }) => ({
+      ...job,
+      applicants_count: (applications as Array<{ count: number }>)?.[0]?.count ?? 0,
+    }));
+
+    // Lazy auto-close: any active job older than JOB_EXPIRY_DAYS gets closed now
+    const cutoff = new Date(Date.now() - JOB_EXPIRY_DAYS * 86_400_000).toISOString();
+    const expiredIds = jobs
+      .filter(j => j.status === 'active' && j.created_at < cutoff)
+      .map(j => j.id);
+
+    if (expiredIds.length > 0) {
+      await supabase.from('jobs').update({ status: 'closed' }).in('id', expiredIds);
+      jobs.forEach(j => {
+        if (expiredIds.includes(j.id)) j.status = 'closed';
+      });
+    }
+
     return NextResponse.json(
-      { jobs: data || [] },
+      { jobs },
       { status: 200 }
     );
   } catch (error) {

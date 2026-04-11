@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase-server';
+import { JOB_EXPIRY_DAYS } from '@/lib/constants';
 
 export async function GET(request: Request) {
   try {
@@ -19,11 +20,15 @@ export async function GET(request: Request) {
       ? `job_title.ilike.%${search}%,company_name.ilike.%${search}%,job_location.ilike.%${search}%`
       : null;
 
+    // Only show jobs posted within the expiry window
+    const cutoff = new Date(Date.now() - JOB_EXPIRY_DAYS * 86_400_000).toISOString();
+
     // First, get total count
     let countQuery = supabase
       .from('jobs')
       .select('*', { count: 'exact', head: true })
-      .eq('status', 'active');
+      .eq('status', 'active')
+      .gte('created_at', cutoff);
     if (searchFilter)    countQuery = countQuery.or(searchFilter);
     if (employmentType)  countQuery = countQuery.eq('employment_type', employmentType);
     if (experienceLevel) countQuery = countQuery.eq('experience_level', experienceLevel);
@@ -42,11 +47,12 @@ export async function GET(request: Request) {
     const totalPages = Math.ceil(total / limit);
     const hasMore = page < totalPages;
 
-    // Fetch active jobs with pagination
+    // Fetch active, non-expired jobs with pagination
     let dataQuery = supabase
       .from('jobs')
       .select('*')
       .eq('status', 'active')
+      .gte('created_at', cutoff)
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
     if (searchFilter)    dataQuery = dataQuery.or(searchFilter);

@@ -12,6 +12,7 @@ import { DeleteConfirmationModal } from './DeleteConfirmationModal';
 import { useRecruiterJobs } from '@/lib/queries/jobs';
 import { useDeleteJob } from '@/lib/mutations/jobs';
 import type { Job } from '@/types';
+import { JOB_EXPIRY_DAYS } from '@/lib/constants';
 
 export function RecruiterDashboard(_props: { firstName?: string }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -68,11 +69,13 @@ export function RecruiterDashboard(_props: { firstName?: string }) {
     return text.substring(0, maxLength).trim() + '...';
   };
 
-  const isJobActive = (job: Job) => {
-    if (job.status !== 'active') return false;
-    const ageInDays = (Date.now() - new Date(job.created_at).getTime()) / 86_400_000;
-    return ageInDays <= 30;
+  const getDaysLeft = (job: Job): number => {
+    const ageMs = Date.now() - new Date(job.created_at).getTime();
+    return JOB_EXPIRY_DAYS - Math.floor(ageMs / 86_400_000);
   };
+
+  const isNewPost = (job: Job): boolean =>
+    Date.now() - new Date(job.created_at).getTime() < 3 * 86_400_000;
 
   return (
     <>
@@ -145,7 +148,17 @@ export function RecruiterDashboard(_props: { firstName?: string }) {
                           Draft
                         </span>
                       )}
-                      {job.status !== 'draft' && isJobActive(job) && (
+                      {job.status === 'closed' && (
+                        <span className="px-2.5 py-1 rounded-full text-xs font-semibold flex-shrink-0 bg-slate-100 text-slate-600">
+                          Closed
+                        </span>
+                      )}
+                      {job.status === 'active' && getDaysLeft(job) <= 7 && getDaysLeft(job) > 0 && (
+                        <span className="px-2.5 py-1 rounded-full text-xs font-semibold flex-shrink-0 bg-orange-100 text-orange-700">
+                          Expires in {getDaysLeft(job)}d
+                        </span>
+                      )}
+                      {job.status === 'active' && getDaysLeft(job) > 7 && isNewPost(job) && (
                         <span className="px-2.5 py-1 rounded-full text-xs font-semibold flex-shrink-0 bg-green-100 text-green-700">
                           New
                         </span>

@@ -3,6 +3,7 @@ import { auth, clerkClient } from '@clerk/nextjs/server';
 import { supabase } from '@/lib/supabase-server';
 import { sendStatusEmail } from '@/lib/email';
 import { requireRole } from '@/lib/auth';
+import { JOB_EXPIRY_DAYS } from '@/lib/constants';
 
 const pdfParse = require('pdf-parse');
 import mammoth from 'mammoth';
@@ -137,6 +138,21 @@ export async function POST(request: Request) {
 
         if (existingApp) {
             return NextResponse.json({ error: 'You have already applied for this job' }, { status: 400 });
+        }
+
+        // Check job is active and not expired (before any expensive file operations)
+        const { data: jobCheck } = await supabase
+            .from('jobs')
+            .select('status, created_at')
+            .eq('id', jobId)
+            .maybeSingle();
+
+        if (!jobCheck || jobCheck.status !== 'active') {
+            return NextResponse.json({ error: 'This job is no longer accepting applications' }, { status: 400 });
+        }
+        const jobAgeMs = Date.now() - new Date(jobCheck.created_at).getTime();
+        if (jobAgeMs > JOB_EXPIRY_DAYS * 86_400_000) {
+            return NextResponse.json({ error: 'This job posting has expired and is no longer accepting applications' }, { status: 400 });
         }
 
         // 0. Extract Text from Resume (buffer already read during validation)
