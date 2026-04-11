@@ -455,20 +455,25 @@ export function PostJobModal({ isOpen, onClose, onJobposted }: PostJobModalProps
             </div>
 
             {/* Footer */}
-            <div className="flex items-center justify-end gap-3 p-6 border-t border-slate-100 bg-slate-50">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-3 p-6 border-t border-slate-100 bg-slate-50">
               <Button
-                type="button"
-                variant="secondary"
-                onClick={handleOnClosePostModal}
+                type="submit"
+                variant="primary"
                 disabled={submittingAs !== null}
+                className="w-full sm:w-auto sm:order-3"
               >
-                Cancel
+                {submittingAs === 'post' ? (
+                  <><Loader2 className="h-4 w-4 animate-spin mr-2" />Posting...</>
+                ) : (
+                  'Post Job'
+                )}
               </Button>
               <Button
                 type="button"
                 variant="secondary"
                 disabled={submittingAs !== null}
                 onClick={handleSaveAsDraft}
+                className="w-full sm:w-auto sm:order-2"
               >
                 {submittingAs === 'draft' ? (
                   <><Loader2 className="h-4 w-4 animate-spin mr-2" />Saving...</>
@@ -477,15 +482,13 @@ export function PostJobModal({ isOpen, onClose, onJobposted }: PostJobModalProps
                 )}
               </Button>
               <Button
-                type="submit"
-                variant="primary"
+                type="button"
+                variant="secondary"
+                onClick={handleOnClosePostModal}
                 disabled={submittingAs !== null}
+                className="w-full sm:w-auto sm:order-1"
               >
-                {submittingAs === 'post' ? (
-                  <><Loader2 className="h-4 w-4 animate-spin mr-2" />Posting...</>
-                ) : (
-                  'Post Job'
-                )}
+                Cancel
               </Button>
             </div>
           </form>
