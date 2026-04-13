@@ -242,10 +242,10 @@ export async function POST(request: Request) {
                     clearTimeout(scoringTimeout);
 
                     if (scoreRes.ok) {
-                        const { score } = await scoreRes.json();
+                        const { score, breakdown } = await scoreRes.json();
                         const now = new Date().toISOString();
                         await supabase.from('scores').upsert(
-                            [{ job_id: jobId, application_id: applicationData.id, score, scored_at: now }],
+                            [{ job_id: jobId, application_id: applicationData.id, score, breakdown: breakdown ?? null, scored_at: now }],
                             { onConflict: 'job_id,application_id' }
                         );
                     } else {
@@ -324,7 +324,7 @@ export async function GET(request: Request) {
         // Fetch applications for this job (Recruiter view)
         const { data, error } = await supabase
             .from('applications')
-            .select('*, scores(score)')
+            .select('*, scores(score, breakdown)')
             .eq('job_id', jobId)
             .order('created_at', { ascending: false });
 

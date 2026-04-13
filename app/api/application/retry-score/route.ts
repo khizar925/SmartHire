@@ -62,11 +62,11 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Scoring service returned an error' }, { status: 502 });
         }
 
-        const { score } = await scoreRes.json();
+        const { score, breakdown } = await scoreRes.json();
         const now = new Date().toISOString();
 
         await supabase.from('scores').upsert(
-            [{ job_id: app.job_id, application_id: applicationId, score, scored_at: now }],
+            [{ job_id: app.job_id, application_id: applicationId, score, breakdown: breakdown ?? null, scored_at: now }],
             { onConflict: 'job_id,application_id' }
         );
 

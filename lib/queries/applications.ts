@@ -18,7 +18,15 @@ export interface Application {
   interview_link?: string;
   status: string;
   created_at: string;
-  scores?: { score: number }[];
+  scores?: {
+    score: number;
+    breakdown?: {
+      semantic: number;
+      skill: number;
+      category: number;
+      mode: string;
+    } | null;
+  }[];
 }
 
 export function useApplications(jobId: string) {

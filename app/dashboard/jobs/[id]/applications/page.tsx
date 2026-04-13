@@ -13,6 +13,9 @@ import {
     Pagination, PaginationContent, PaginationEllipsis,
     PaginationItem, PaginationLink, PaginationNext, PaginationPrevious,
 } from "@/components/ui/pagination";
+import {
+    Tooltip, TooltipContent, TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useApplications, type Application } from '@/lib/queries/applications';
 import { useRecruiterJobs } from '@/lib/queries/jobs';
 import { useUpdateApplicationStatus } from '@/lib/mutations/applications';
@@ -259,6 +262,61 @@ export default function JobApplicationsPage({ params }: { params: Promise<{ id: 
         return 'bg-white text-slate-400 border border-slate-100';
     };
 
+    // ── Score breakdown tooltip content ──────────────────────────────────────
+    const ScoreBreakdownTooltip = ({ breakdown }: { breakdown: NonNullable<NonNullable<Application['scores']>[0]['breakdown']> }) => {
+        const bars = [
+            {
+                label: 'Text Match',
+                value: breakdown.semantic,
+                description: 'How closely the resume language matches the job description.',
+                color: 'bg-indigo-400',
+            },
+            {
+                label: 'Skill Match',
+                value: breakdown.skill,
+                description: 'How many required skills were found in the resume.',
+                color: 'bg-violet-400',
+            },
+            {
+                label: 'Category Match',
+                value: breakdown.category,
+                description: "How well the candidate's experience area aligns with the role.",
+                color: 'bg-sky-400',
+            },
+        ];
+
+        const getQuality = (v: number) =>
+            v >= 75 ? 'Strong' : v >= 50 ? 'Good' : v >= 30 ? 'Partial' : 'Weak';
+
+        return (
+            <div className="w-64 space-y-3">
+                <p className="text-[11px] font-bold text-slate-200 uppercase tracking-widest border-b border-white/10 pb-2">
+                    Score Breakdown
+                </p>
+                {bars.map(({ label, value, description, color }) => (
+                    <div key={label} className="space-y-1">
+                        <div className="flex items-center justify-between">
+                            <span className="text-xs font-semibold text-white">{label}</span>
+                            <span className="text-xs font-bold text-white/80">
+                                {value.toFixed(0)}/100
+                                <span className="ml-1.5 text-[10px] font-normal text-white/50">
+                                    ({getQuality(value)})
+                                </span>
+                            </span>
+                        </div>
+                        <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
+                            <div className={`h-full ${color} rounded-full transition-all`} style={{ width: `${value}%` }} />
+                        </div>
+                        <p className="text-[10px] text-white/50 leading-tight">{description}</p>
+                    </div>
+                ))}
+                <p className="text-[10px] text-white/30 pt-1 border-t border-white/10">
+                    Weights: Text 60% · Skills 25% · Category 15%
+                </p>
+            </div>
+        );
+    };
+
     // ── Render ────────────────────────────────────────────────────────────────
     return (
         <div className="min-h-screen bg-slate-50 p-2 md:p-3">
@@ -389,7 +447,24 @@ export default function JobApplicationsPage({ params }: { params: Promise<{ id: 
                                         <div className="flex items-center gap-4 text-xs text-slate-600">
                                             <span className="flex items-center gap-1"><Briefcase className="h-3.5 w-3.5 text-slate-400" />{app.years_of_experience} yrs</span>
                                             <span className="flex items-center gap-1"><GraduationCap className="h-3.5 w-3.5 text-slate-400" />{app.education_level}</span>
-                                            {hasScore && <span className="flex items-center gap-1"><Award className="h-3.5 w-3.5 text-indigo-400" />{score!.toFixed(1)}</span>}
+                                            {hasScore && (
+                                                <span className="flex items-center gap-1">
+                                                    <Award className="h-3.5 w-3.5 text-indigo-400" />
+                                                    {score!.toFixed(1)}
+                                                    {app.scores?.[0]?.breakdown && (
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <button className="text-slate-400 hover:text-indigo-500 transition-colors">
+                                                                    <Info className="h-3 w-3" />
+                                                                </button>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent side="top" className="bg-slate-900 border-slate-700 p-3">
+                                                                <ScoreBreakdownTooltip breakdown={app.scores[0].breakdown} />
+                                                            </TooltipContent>
+                                                        </Tooltip>
+                                                    )}
+                                                </span>
+                                            )}
                                             {isPending && (
                                                 <span className="flex items-center gap-1">
                                                     <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-600 border border-amber-200 uppercase">Pending</span>
@@ -492,8 +567,23 @@ export default function JobApplicationsPage({ params }: { params: Promise<{ id: 
                                                                 <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-indigo-50 border border-indigo-100 text-indigo-700 font-bold text-base">
                                                                     {score!.toFixed(1)}
                                                                 </div>
-                                                                <div className="w-20 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                                                    <div className="h-full bg-indigo-500 transition-all duration-700" style={{ width: `${score}%` }} />
+                                                                <div className="flex flex-col gap-1">
+                                                                    <div className="w-20 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                                                        <div className="h-full bg-indigo-500 transition-all duration-700" style={{ width: `${score}%` }} />
+                                                                    </div>
+                                                                    {app.scores?.[0]?.breakdown && (
+                                                                        <Tooltip>
+                                                                            <TooltipTrigger asChild>
+                                                                                <button className="flex items-center gap-1 text-[10px] text-slate-400 hover:text-indigo-500 transition-colors w-fit">
+                                                                                    <Info className="h-3 w-3" />
+                                                                                    <span>How scored?</span>
+                                                                                </button>
+                                                                            </TooltipTrigger>
+                                                                            <TooltipContent side="right" className="bg-slate-900 border-slate-700 p-3">
+                                                                                <ScoreBreakdownTooltip breakdown={app.scores[0].breakdown} />
+                                                                            </TooltipContent>
+                                                                        </Tooltip>
+                                                                    )}
                                                                 </div>
                                                             </div>
                                                         ) : isPending ? (

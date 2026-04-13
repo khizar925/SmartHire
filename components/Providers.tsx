@@ -5,6 +5,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { useAuth } from '@clerk/nextjs';
 import { queryClient } from '@/lib/query-client';
+import { TooltipProvider } from '@/components/ui/tooltip';
 
 // Clears stale cache when user signs out so a different account never sees old data
 function CacheClearer() {
@@ -24,9 +25,11 @@ function CacheClearer() {
 export default function Providers({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
-      <CacheClearer />
-      {children}
-      <ReactQueryDevtools initialIsOpen={false} />
+      <TooltipProvider delayDuration={200}>
+        <CacheClearer />
+        {children}
+        <ReactQueryDevtools initialIsOpen={false} />
+      </TooltipProvider>
     </QueryClientProvider>
   );
 }
