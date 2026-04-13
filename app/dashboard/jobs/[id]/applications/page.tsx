@@ -46,6 +46,9 @@ export default function JobApplicationsPage({ params }: { params: Promise<{ id: 
     const { id } = use(params);
     const router = useRouter();
 
+    // Score breakdown expanded on mobile (tracks which card is open)
+    const [expandedBreakdownId, setExpandedBreakdownId] = useState<string | null>(null);
+
     // Retry score
     const [retryingId, setRetryingId] = useState<string | null>(null);
     const [retryError, setRetryError] = useState<{ id: string; message: string } | null>(null);
@@ -418,8 +421,16 @@ export default function JobApplicationsPage({ params }: { params: Promise<{ id: 
                     </div>
                 ) : (
                     <>
+                        {/* Overlay — closes breakdown when tapping outside the card */}
+                        {expandedBreakdownId && (
+                            <div
+                                className="sm:hidden fixed inset-0 z-10"
+                                onClick={() => setExpandedBreakdownId(null)}
+                            />
+                        )}
+
                         {/* Mobile card view */}
-                        <div className="sm:hidden space-y-3 mb-8">
+                        <div className="sm:hidden space-y-3 mb-8 relative z-20">
                             {paginated.map((app: Application, pageIdx) => {
                                 const globalIdx = (currentPage - 1) * itemsPerPage + pageIdx;
                                 const score = app.scores?.[0]?.score;
@@ -452,16 +463,17 @@ export default function JobApplicationsPage({ params }: { params: Promise<{ id: 
                                                     <Award className="h-3.5 w-3.5 text-indigo-400" />
                                                     {score!.toFixed(1)}
                                                     {app.scores?.[0]?.breakdown && (
-                                                        <Tooltip>
-                                                            <TooltipTrigger asChild>
-                                                                <button className="text-slate-400 hover:text-indigo-500 transition-colors">
-                                                                    <Info className="h-3 w-3" />
-                                                                </button>
-                                                            </TooltipTrigger>
-                                                            <TooltipContent side="top" className="bg-slate-900 border-slate-700 p-3">
-                                                                <ScoreBreakdownTooltip breakdown={app.scores[0].breakdown} />
-                                                            </TooltipContent>
-                                                        </Tooltip>
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setExpandedBreakdownId(
+                                                                    expandedBreakdownId === app.id ? null : app.id
+                                                                );
+                                                            }}
+                                                            className="p-1 rounded-md text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 transition-colors"
+                                                        >
+                                                            <Info className="h-3.5 w-3.5" />
+                                                        </button>
                                                     )}
                                                 </span>
                                             )}
@@ -474,6 +486,37 @@ export default function JobApplicationsPage({ params }: { params: Promise<{ id: 
                                                 </span>
                                             )}
                                         </div>
+                                        {/* Expandable score breakdown — tap ℹ to toggle */}
+                                        {expandedBreakdownId === app.id && app.scores?.[0]?.breakdown && (() => {
+                                            const bd = app.scores[0].breakdown!;
+                                            const bars = [
+                                                { label: 'Text Match',     value: bd.semantic, color: 'bg-indigo-400' },
+                                                { label: 'Skill Match',    value: bd.skill,    color: 'bg-violet-400' },
+                                                { label: 'Category Match', value: bd.category, color: 'bg-sky-400'    },
+                                            ];
+                                            const quality = (v: number) =>
+                                                v >= 75 ? 'Strong' : v >= 50 ? 'Good' : v >= 30 ? 'Partial' : 'Weak';
+                                            return (
+                                                <div className="rounded-xl bg-slate-50 border border-slate-200 p-3 space-y-2">
+                                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Score Breakdown</p>
+                                                    {bars.map(({ label, value, color }) => (
+                                                        <div key={label} className="space-y-0.5">
+                                                            <div className="flex justify-between items-center">
+                                                                <span className="text-xs font-semibold text-slate-700">{label}</span>
+                                                                <span className="text-xs text-slate-500">
+                                                                    {value.toFixed(0)}/100
+                                                                    <span className="ml-1 text-[10px] text-slate-400">({quality(value)})</span>
+                                                                </span>
+                                                            </div>
+                                                            <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                                                                <div className={`h-full ${color} rounded-full`} style={{ width: `${value}%` }} />
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            );
+                                        })()}
+
                                         <div className="flex items-center justify-end gap-2 pt-1 border-t border-slate-100">
                                             <a href={`/api/resume?path=${encodeURIComponent(app.resume_url)}`} target="_blank" rel="noopener noreferrer" title="View Resume" className="p-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-colors">
                                                 <FileText className="h-4 w-4" />
