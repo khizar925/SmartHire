@@ -29,7 +29,7 @@ export function PostJobModal({ isOpen, onClose, onJobposted }: PostJobModalProps
   const [error, setError] = useState<string | null>(null);
   const [errorDetails, setErrorDetails] = useState<string[]>([]);
   const [createdJobId, setCreatedJobId] = useState<string | null>(null);
-  const publicLink = process.env.NEXT_PUBLIC_APP_URL || (typeof window !== 'undefined' ? window.location.origin : '');
+  const publicLink = (process.env.NEXT_PUBLIC_APP_URL || (typeof window !== 'undefined' ? window.location.origin : '')).replace(/\/+$/, '');
   const [publicLinkStatus, setPublicLinkStatus] = useState(false);
   const [copied, setCopied] = useState(false);
   const qc = useQueryClient();

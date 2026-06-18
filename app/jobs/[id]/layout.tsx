@@ -16,7 +16,7 @@ export async function generateMetadata(
         return { title: 'Job Not Found' };
     }
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://smarthire.website';
+    const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://smarthire.website').replace(/\/+$/, '');
     const description = `${job.company_name} is hiring a ${job.job_title} in ${job.job_location}. ${job.job_description.slice(0, 120).replace(/\s+/g, ' ').trim()}...`;
     const pageUrl = `${appUrl}/jobs/${id}`;
 

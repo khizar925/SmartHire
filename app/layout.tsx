@@ -4,7 +4,7 @@ import { Analytics } from '@vercel/analytics/next';
 import Providers from '@/components/Providers';
 import './globals.css';
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://smarthire.website';
+const APP_URL = (process.env.NEXT_PUBLIC_APP_URL || 'https://smarthire.website').replace(/\/+$/, '');
 
 export const metadata: Metadata = {
   metadataBase: new URL(APP_URL),

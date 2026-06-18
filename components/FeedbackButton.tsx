@@ -87,7 +87,7 @@ export function FeedbackButton() {
 
             {/* Modal */}
             <div
-                className={`fixed bottom-20 right-6 z-50 w-full max-w-sm bg-white rounded-2xl shadow-2xl border border-slate-100 transition-all duration-300 ${
+                className={`fixed bottom-20 left-4 right-4 sm:left-auto sm:right-6 z-50 sm:w-full max-w-sm bg-white rounded-2xl shadow-2xl border border-slate-100 transition-all duration-300 ${
                     isOpen
                         ? 'opacity-100 translate-y-0 pointer-events-auto'
                         : 'opacity-0 translate-y-4 pointer-events-none'
