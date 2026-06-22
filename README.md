@@ -31,7 +31,6 @@ AI-powered recruitment platform that helps recruiters post jobs, screen candidat
 | Styling | Tailwind CSS |
 | Auth | Clerk |
 | Database | Supabase (PostgreSQL) |
-| AI | Google Gemini |
 | Email | Resend |
 | Animations | Framer Motion |
 | Data Fetching | TanStack Query |
