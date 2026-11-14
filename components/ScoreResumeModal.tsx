@@ -26,6 +26,29 @@ function getScoreFeedback(score: number): { heading: string; body: string } {
     return { heading: 'Low Match', body: 'Your resume may need significant updates for this role.' };
 }
 
+// Ships client-side errors to the server so they appear in Vercel logs
+// (browser errors never reach server logs on their own). Never throws.
+function reportClientError(context: string, error: unknown, extra?: Record<string, unknown>) {
+    try {
+        const payload = {
+            context,
+            message: error instanceof Error ? error.message : error ? String(error) : undefined,
+            name: error instanceof Error ? error.name : undefined,
+            stack: error instanceof Error ? error.stack : undefined,
+            userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : undefined,
+            ...extra,
+        };
+        fetch('/api/client-log', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+            keepalive: true,
+        }).catch(() => { });
+    } catch {
+        /* logging must never break the UI */
+    }
+}
+
 export function ScoreResumeModal({ isOpen, onClose }: ScoreResumeModalProps) {
     const [mounted, setMounted] = useState(false);
     const [file, setFile] = useState<File | null>(null);
@@ -146,13 +169,28 @@ export function ScoreResumeModal({ isOpen, onClose }: ScoreResumeModalProps) {
             if (jdMode === 'custom') formData.append('customJd', customJd.trim());
 
             const res = await fetch('/api/score-resume', { method: 'POST', body: formData });
-            const data = await res.json();
-            if (!res.ok) {
-                setError(data.error || 'Failed to score resume. Please try again.');
+
+            let data: { error?: string; score?: number } | null = null;
+            try {
+                data = await res.json();
+            } catch (parseErr) {
+                reportClientError('score-resume:parse', parseErr, {
+                    status: res.status, statusText: res.statusText,
+                });
+                setError('Failed to score resume. Please try again.');
                 return;
             }
-            setScore(Math.round(data.score));
-        } catch {
+
+            if (!res.ok) {
+                reportClientError('score-resume:not-ok', null, { status: res.status, body: data });
+                setError(data?.error || 'Failed to score resume. Please try again.');
+                return;
+            }
+            setScore(Math.round(data!.score!));
+        } catch (err) {
+            reportClientError('score-resume:throw', err, {
+                fileName: file?.name, fileSize: file?.size, fileType: file?.type, jdMode,
+            });
             setError('Failed to score resume. Please try again.');
         } finally {
             setIsScoring(false);
