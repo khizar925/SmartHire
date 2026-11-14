@@ -163,8 +163,23 @@ export function ScoreResumeModal({ isOpen, onClose }: ScoreResumeModalProps) {
         setIsScoring(true);
         setError(null);
         try {
+            // Read the file into memory up front. On Android the picked File can
+            // become unreadable by the time fetch streams it (→ "Failed to fetch");
+            // uploading an in-memory Blob copy avoids that.
+            let resumeBlob: Blob;
+            try {
+                const buf = await file!.arrayBuffer();
+                resumeBlob = new Blob([buf], { type: file!.type || 'application/octet-stream' });
+            } catch (readErr) {
+                reportClientError('score-resume:file-read', readErr, {
+                    fileName: file?.name, fileSize: file?.size, fileType: file?.type,
+                });
+                setError('Could not read the file. Please re-select it and try again.');
+                return;
+            }
+
             const formData = new FormData();
-            formData.append('resume', file!);
+            formData.append('resume', resumeBlob, file!.name);
             if (jdMode === 'job') formData.append('jobId', selectedJobId);
             if (jdMode === 'custom') formData.append('customJd', customJd.trim());
 
